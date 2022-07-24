@@ -243,17 +243,11 @@ function kts_restrict_admin_access() {
 			exit;
 		}
 	}
+
+	# Remove ability to choose admin colors
+	remove_action( 'admin_color_scheme_picker', 'admin_color_scheme_picker' );
 }
 add_action( 'admin_init', 'kts_restrict_admin_access' );
-
-
-/* ADD MESSAGE TO TOP OF EACH SUBSCRIBER'S PROFILE PAGE */
-function kts_profile_message() {
-	if ( ! current_user_can( 'edit_posts' ) ) {
-		_e( '<div class="notice is-dismissible"><p id="two-fa"><strong>You need to activate <a href="#two-factor-options">Two Factor Authentication</a> before you can be approved to submit software to the Directory.</strong></p></div>', 'classicpress' );
-	} 
-}
-add_action( 'admin_notices', 'kts_profile_message' );
 
 
 /* REMOVE ADMIN MENU ITEMS FOR THOSE OTHER THAN EDITORS AND ADMINISTRATORS */
