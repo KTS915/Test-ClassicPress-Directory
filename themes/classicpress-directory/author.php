@@ -4,8 +4,7 @@
  *
  * @link https://developer.wordpress.org/themes/basics/template-hierarchy/
  */
-$author_id = get_queried_object_id();
-$author = get_user_by( 'id', $author_id );
+$author = get_queried_object();
 
 get_header();
 ?>
@@ -43,7 +42,7 @@ get_header();
 					$plugin_args = array(
 						'post_type'		=> 'plugin',
 						'post_status'	=> 'publish',
-						'author'		=> $author_id,
+						'author'		=> $author->ID,
 					);
 					$plugin_post_loop = new WP_Query( $plugin_args );
 
@@ -80,7 +79,7 @@ get_header();
 					$theme_args = array(
 						'post_type'		=> 'theme',
 						'post_status'	=> 'publish',
-						'author'		=> $author_id,
+						'author'		=> $author->ID,
 					);
 					$theme_post_loop = new WP_Query( $theme_args );
 
@@ -116,7 +115,7 @@ get_header();
 					$snippet_args = array(
 						'post_type'		=> 'snippet',
 						'post_status'	=> 'publish',
-						'author'		=> $author_id,
+						'author'		=> $author->ID,
 					);
 					$snippet_post_loop = new WP_Query( $snippet_args );
 
