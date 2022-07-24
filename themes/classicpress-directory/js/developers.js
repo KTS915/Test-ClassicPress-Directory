@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				for (let i = 0, n = developerPanels.length; i < n; i++) {
 					developerPanels[i].removeAttribute('hidden');
 				}
-				developers.style.paddingTop = '0';
 			}
 			else {
 				for (let i = 0, n = developerPanels.length; i < n; i++) {
@@ -33,7 +32,6 @@ document.addEventListener('DOMContentLoaded', function() {
 				if (panel !== null) {
 					panel.removeAttribute('hidden');
 				}
-				developers.style.paddingTop = '1em';
 			}
 		}, false);
 
