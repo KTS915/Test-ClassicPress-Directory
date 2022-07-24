@@ -123,8 +123,7 @@ function kts_list_developers() {
 	if ( empty( $developers ) ) {
 		$args = array(
 			'role__not_in'	=> 'subscriber',
-			'meta_key'		=> 'last_name',
-			'orderby'		=> 'meta_value'
+			'orderby'		=> 'display_name',
 		);
 		$users = get_users( $args );
 
@@ -133,7 +132,7 @@ function kts_list_developers() {
 
 		if ( ! empty( $users ) ) {
 			foreach ( $users as $user ) {
-				$initial = $user->last_name[0]; // first letter of last name
+				$initial = $user->display_name[0]; // first letter
 				if ( $initial !== $previous_initial ) {
 					$developers .= '</ul><ul id="letter-' . strtolower( $initial ) . '-panel" class="developer-panel" role="tabpanel">';
 					$previous_initial = $initial;
