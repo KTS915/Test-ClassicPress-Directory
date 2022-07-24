@@ -13,7 +13,7 @@ get_header();
 		<main id="main">
 
 			<header>
-				<h1><?php echo $author->display_name; ?></h1>
+				<h1><span class="brand"><?php echo get_avatar( $author->ID, 32 ); ?></span><?php echo esc_html( $author->display_name ); ?></h1>
 			</header>
 
 			<?php
