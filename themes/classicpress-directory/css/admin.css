@@ -2,7 +2,8 @@
 .search-filter-notice-v3-coming-soon {
 	display: none;
 }
-#two-fa {
+.two-fa {
 	font-size: 150%;
-	padding: 0.5em;
+	padding: 1em;
+	background: #fff;
 }
