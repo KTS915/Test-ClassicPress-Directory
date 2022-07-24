@@ -279,6 +279,9 @@ input[type="submit"] {
 	margin: 0.4em 0.1em;
 	padding: 0.3em 0.4em;
 }
+.developers {
+	padding-top: 1em;
+}
 .developer-panel {
 	margin-bottom: 1em;
 }
