@@ -138,7 +138,7 @@ function kts_list_developers() {
 					$previous_initial = $initial;
 				}
 
-				$developers .= '<li><a href="' . esc_url( get_author_posts_url( $user->ID ) ) . '" class="developer">' . esc_html( $user->display_name ) . '</a>&emsp;<a href="' . esc_url( get_user_meta( $user->ID, 'repo_url', true ) ) . '" title="' . __( 'GitHub Repository for ', 'classicpress' ) . esc_attr( $user->display_name ) . '"><i class="cpicon-github dev-github"></i></a></li>';
+				$developers .= '<li><span>' . get_avatar( $user->ID, 24 ) . '</span> <a href="' . esc_url( get_author_posts_url( $user->ID ) ) . '" class="developer">' . esc_html( $user->display_name ) . '</a>&emsp;<a href="' . esc_url( get_user_meta( $user->ID, 'repo_url', true ) ) . '" title="' . __( 'GitHub Repository for ', 'classicpress' ) . esc_attr( $user->display_name ) . '"><i class="cpicon-github dev-github"></i></a></li>';
 
 				if ( $user === end( $users ) ) { // last name in list
 					$developers .= '</ul>';
