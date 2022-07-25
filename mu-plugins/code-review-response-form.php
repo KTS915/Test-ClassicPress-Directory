@@ -115,17 +115,17 @@ function kts_render_review_response_form() {
 				<legend><?php _e( 'Select Type of Software', 'classicpress' ); ?></legend>
 				<div class="clear"></div>
 				<label for="plugin">
-					<input id="plugin" class="mgr-lg" name="software-type" type="radio" value="plugin" <?php checked( $precompiled_type, 'plugin') ?> required>
+					<input id="plugin" class="mgr-lg" name="software-type" type="radio" value="plugin" <?php checked( $precompiled_type, 'plugin' ) ?> required>
 					Plugin
 				</label>
 				<br>
 				<label for="theme">
-					<input id="theme" class="mgr-lg" name="software-type" type="radio" value="theme" <?php checked( $precompiled_type, 'theme') ?> required>
+					<input id="theme" class="mgr-lg" name="software-type" type="radio" value="theme" <?php checked( $precompiled_type, 'theme' ) ?> required>
 					Theme
 				</label>
 				<br>
 				<label for="snippet">
-					<input id="snippet" class="mgr-lg" name="software-type" type="radio" value="snippet" <?php checked( $precompiled_type, 'snippet') ?> required>
+					<input id="snippet" class="mgr-lg" name="software-type" type="radio" value="snippet" <?php checked( $precompiled_type, 'snippet' ) ?> required>
 					Code Snippet
 				</label>
 			</fieldset>
