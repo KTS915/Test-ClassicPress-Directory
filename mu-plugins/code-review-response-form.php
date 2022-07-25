@@ -226,12 +226,12 @@ function kts_review_response_form_redirect() {
 
 	# Check that URL to download software is to a later release	
 	$download_link = get_post_meta( $software_id, 'download_link', true );
-	preg_match( '~releases\/download\/v[\s\S]+?\/~', $download_link, $orig_matches );
-	$orig_version = str_replace( ['releases/download/v', '/'], '', $orig_matches[0] );
+	preg_match( '~releases\/download\/v?[\s\S]+\/~', $download_link, $orig_matches );
+	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
 
 	$new_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
-	preg_match( '~releases\/download\/v[\s\S]+?\/~', $new_link, $new_matches );
-	$new_version = str_replace( ['releases/download/v', '/'], '', $new_matches[0] );
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
+	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
 
 	if ( version_compare( $new_version, $orig_version ) !== 1 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-later-link' ) );
