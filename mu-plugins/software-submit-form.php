@@ -105,6 +105,12 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'invalid-download-link' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a valid URL for the download link!', 'classicpress' ) . '</p></div>';
 			}
+			elseif ( $_GET['notification'] === 'temp-file-error' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem creating a temporary file.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'file-error' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem while parsing your zip file.', 'classicpress' ) . '</p></div>';
+			}
 			elseif ( $_GET['notification'] === 'invalid-github' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a URL for a GitHub repository!', 'classicpress' ) . '</p></div>';
 			}
@@ -142,11 +148,8 @@ function kts_render_software_submit_form() {
 			<label for="name"><?php _e( 'Name of Software', 'classicpress' ); ?></label>
 			<input id="name" name="name" type="text" required>
 
-			<label for="slug"><?php _e( 'Slug for Software', 'classicpress' ); ?></label>
-			<input id="slug" name="slug" type="text" required>
-
-			<label for="excerpt"><?php _e( 'Brief Description of Software (not more than 100 characters)', 'classicpress' ); ?></label>
-			<input id="excerpt" name="excerpt" type="text" maxlength="100" required>
+			<label for="excerpt"><?php _e( 'Brief Description of Software (not more than 150 characters)', 'classicpress' ); ?></label>
+			<input id="excerpt" name="excerpt" type="text" maxlength="150" required>
 
 			<label for="description"><?php _e( 'Full Description of Software (you might like to paste the contents of your readme.txt file here)', 'classicpress' ); ?></label>
 			<textarea id="description" name="description" required></textarea>
@@ -170,9 +173,6 @@ function kts_render_software_submit_form() {
 				<span id="max" class="error-message" role="alert" hidden><?php _e( 'You have specified more than three tags!', 'classicpress' ); ?></span>
 				<input id="tags" name="tags" type="text" disabled>
 			</div>
-
-			<label for="current_version"><?php _e( 'Current Version of Software', 'classicpress' ); ?></label>
-			<input id="current_version" name="current_version" type="text" required>
 
 			<label for="cp_version"><?php _e( 'Minimum Version of ClassicPress', 'classicpress' ); ?></label>
 			<input id="cp_version" name="cp_version" type="number" step="0.1" min="1.0" required>
@@ -291,20 +291,14 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	# Check that slug for software has been provided
-	if ( empty( $_POST['slug'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-slug' ) );
-		exit;
-	}
-
 	# Check that brief description of software has been provided
 	if ( empty( $_POST['excerpt'] ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-excerpt' ) );
 		exit;
 	}
 
-	# Check that brief description of software does not exceed 100 characters
-	if ( strlen( $_POST['excerpt'] ) > 100 ) {
+	# Check that brief description of software does not exceed 150 characters
+	if ( strlen( $_POST['excerpt'] ) > 150 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=excerpt-too-long' ) );
 		exit;
 	}
@@ -312,12 +306,6 @@ function kts_software_submit_form_redirect() {
 	# Check that description of software has been provided
 	if ( empty( $_POST['description'] ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
-		exit;
-	}
-
-	# Check that current version of software has been provided
-	if ( empty( $_POST['current_version'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-current-version' ) );
 		exit;
 	}
 
@@ -363,6 +351,37 @@ function kts_software_submit_form_redirect() {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
 		exit;
 	}
+	
+	# Enable the download_url() and wp_handle_sideload() functions
+	require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+	# Get download link
+	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
+
+	# Download (upload?) file to temp dir
+	$temp_file = download_url( $download_link, 5 ); // 5 secs before timeout
+	if ( is_wp_error( $temp_file ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=temp-file-error' ) );
+		exit;
+	}
+
+	# Array based on $_FILE as seen in PHP file uploads
+	$file = array(
+		'name'     => basename( $download_link ),
+		'type'     => 'application/zip',
+		'tmp_name' => $temp_file,
+		'error'    => 0,
+		'size'     => filesize( $temp_file ),
+	);
+
+	# Find slug from top level folder name
+	$zip = new ZipArchive();
+	$zip->open( $file['tmp_name'] );
+	$dir = trim( $zip->getNameIndex(0), '/' );
+	$slug = strstr( $dir, '/', true );
+
+	# Delete temporary file
+	wp_delete_file( $file['tmp_name'] );
 
 	# Prevent form title being all upper case
 	$title = sanitize_text_field( wp_unslash( $_POST['name'] ) );
@@ -376,20 +395,15 @@ function kts_software_submit_form_redirect() {
 	# Get software description
 	$description = sanitize_textarea_field( wp_unslash( $_POST['description'] ) );
 
-	# Get slug
-	$slug = sanitize_title( wp_unslash( $_POST['slug'] ) );
-
 	# Get current version of software
-	$current_version = sanitize_text_field( wp_unslash( $_POST['current_version'] ) );
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
+	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
 
 	# Get git provider
 	$git_provider = sanitize_text_field( wp_unslash( $_POST['git_provider'] ) );
 
 	# Get minimum version of CP
 	$cp_version = sanitize_text_field( wp_unslash( $_POST['cp_version'] ) );
-
-	# Get download link
-	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
 
 	# Submit form as a post type
 	$post_info = array(
