@@ -65,6 +65,9 @@ function kts_render_review_response_form() {
 			elseif ( $_GET['notification'] === 'id-type-mismatch' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'The software ID you have specified does not match the software type!', 'classicpress' ) . '</p></div>';
 			}
+			elseif ( $_GET['notification'] === 'wrong-author' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'Only the software author may respond to a code review!', 'classicpress' ) . '</p></div>';
+			}
 			elseif ( $_GET['notification'] === 'no-comments' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide some comments!', 'classicpress' ) . '</p></div>';
 			}
@@ -217,6 +220,13 @@ function kts_review_response_form_redirect() {
 		exit;
 	}
 
+	# Check that the person submitting this form is the software author
+	$author_id = get_post_field( 'post_author', $software_id );
+	if ( get_current_user_id() !== (int) $author_id ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=wrong-author' ) );
+		exit;
+	}
+
 	# Check that comments have been provided
 	if ( empty( $_POST['comments'] ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-comments' ) );
@@ -248,7 +258,7 @@ function kts_review_response_form_redirect() {
 
 	$new_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
-	$new_version = str_replace( ['releases/download/v', 'releases/download/','/'], '', $new_matches[0] );
+	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
 
 	if ( version_compare( $new_version, $orig_version ) !== 1 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-later-link' ) );
