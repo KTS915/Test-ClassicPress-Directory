@@ -90,7 +90,7 @@ function kts_render_review_response_form() {
 
 		# Get info from query
 		if ( isset( $_REQUEST['reviewed-item-name'] ) ) {
-			$precompiled_name = 'value="' . sanitize_text_field( wp_unslash( $_REQUEST['reviewed-item-name'] ) ) . '"';
+			$precompiled_name = 'value="' . esc_attr( wp_unslash( $_REQUEST['reviewed-item-name'] ) ) . '"';
 		} else {
 			$precompiled_name = '';
 		}
