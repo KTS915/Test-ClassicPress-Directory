@@ -311,7 +311,7 @@ function kts_email_on_response_submitted( $comment_ID, $comment ) {
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 	# Send email to administrators and editors
-	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] ) );
+	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] );
 	foreach( $users as $user ) {
 		wp_mail( $user->user_email, $subject, $message, $headers );
 	}
