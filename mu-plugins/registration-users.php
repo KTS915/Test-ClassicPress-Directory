@@ -250,6 +250,39 @@ function kts_restrict_admin_access() {
 add_action( 'admin_init', 'kts_restrict_admin_access' );
 
 
+/* DISABLE VISUAL EDITOR */
+add_filter( 'user_can_richedit' , '__return_false' );
+
+
+/* REMOVE VISUAL EDITOR, KEYBOARD SHORTCUTS, AND TOOLBAR OPTIONS */
+if ( ! function_exists( 'kts_remove_personal_options' ) ) {
+
+	function kts_remove_personal_options( $subject ) {
+		global $pagenow;
+		if ( $pagenow === 'profile.php' ) {
+			$subject = preg_replace( '#<h2 class="user-profile-personal-options">Personal Options</h2>.+?/table>#s', '', $subject, 1 );
+			return $subject;
+		}
+	}
+
+	function kts_profile_subject_start() {
+		global $pagenow;
+		if ( $pagenow === 'profile.php' ) {
+			ob_start( 'kts_remove_personal_options' );
+		}
+	}
+
+	function kts_profile_subject_end() {
+		global $pagenow;
+		if ( $pagenow === 'profile.php' ) {
+			ob_end_flush();
+		}
+	}
+}
+add_action( 'admin_head', 'kts_profile_subject_start' );
+add_action( 'admin_footer', 'kts_profile_subject_end' );
+
+
 /* REMOVE ADMIN MENU ITEMS FOR THOSE OTHER THAN EDITORS AND ADMINISTRATORS */
 function kts_remove_admin_menu_items() {
 	if ( ! current_user_can( 'edit_pages' ) ) {
