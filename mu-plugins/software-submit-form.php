@@ -451,8 +451,8 @@ function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 
 	# Bail if not relevant CPT
 	$post = get_post( $post_id );
-    if ( ! in_array( $post->post_type, ['plugin', 'theme', 'snippet'] ) ) {
-        return;
+	if ( ! in_array( $post->post_type, ['plugin', 'theme', 'snippet'] ) ) {
+		return;
 	}
 
 	# Bail if not download link metadata
