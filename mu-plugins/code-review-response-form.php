@@ -248,7 +248,7 @@ function kts_review_response_form_redirect() {
 
 	$new_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
-	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
+	$new_version = str_replace( ['releases/download/v', 'releases/download/','/'], '', $new_matches[0] );
 
 	if ( version_compare( $new_version, $orig_version ) !== 1 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-later-link' ) );
@@ -275,7 +275,7 @@ function kts_review_response_form_redirect() {
 	$comment_id = wp_insert_comment( $commentdata );
 
 	# Generate an error message if there is a problem with submitting the form
-	if ( $comment_id  === false ) {
+	if ( $comment_id === false ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-comment' ) );
 		exit;
 	}
@@ -310,8 +310,8 @@ function kts_email_on_response_submitted( $comment_ID, $comment ) {
 
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-	# Get email addresses of administrators and send
-	$users = get_users( array( 'role' => 'administrator' ) );
+	# Send email to administrators and editors
+	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] ) );
 	foreach( $users as $user ) {
 		wp_mail( $user->user_email, $subject, $message, $headers );
 	}
