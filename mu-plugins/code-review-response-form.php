@@ -222,7 +222,8 @@ function kts_review_response_form_redirect() {
 
 	# Check that the person submitting this form is the software author
 	$author_id = get_post_field( 'post_author', $software_id );
-	if ( get_current_user_id() !== (int) $author_id ) {
+	$user_id = get_current_user_id();
+	if ( $user_id !== (int) $author_id ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=wrong-author' ) );
 		exit;
 	}
@@ -280,7 +281,7 @@ function kts_review_response_form_redirect() {
 		'comment_approved'	=> 1,
 		'comment_content'	=> $comments,
 		'comment_post_ID'	=> end( $review_ids ), // get latest associated review
-		'user_id'			=> get_current_user_id(),
+		'user_id'			=> $user_id,
 	);
 	$comment_id = wp_insert_comment( $commentdata );
 
