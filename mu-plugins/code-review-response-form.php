@@ -226,7 +226,7 @@ function kts_review_response_form_redirect() {
 
 	# Check that URL to download software is to a later release	
 	$download_link = get_post_meta( $software_id, 'download_link', true );
-	preg_match( '~releases\/download\/v?[\s\S]+\/~', $download_link, $orig_matches );
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
 	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
 
 	$new_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
