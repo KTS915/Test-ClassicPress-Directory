@@ -281,7 +281,7 @@ function kts_review_response_form_redirect() {
 		'comment_approved'	=> 1,
 		'comment_content'	=> $comments,
 		'comment_post_ID'	=> end( $review_ids ), // get latest associated review
-		'user_id'			=> $user_id,
+		'user_id'		=> $user_id,
 	);
 	$comment_id = wp_insert_comment( $commentdata );
 
@@ -303,8 +303,8 @@ function kts_email_on_response_submitted( $comment_ID, $comment ) {
 
 	# Bail if not a comment on a review CPT
 	$post = get_post( $comment->comment_post_ID );
-    if ( $post->post_type !== 'review' ) {
-        return;
+	if ( $post->post_type !== 'review' ) {
+		return;
 	}
 
 	# Get details of software
