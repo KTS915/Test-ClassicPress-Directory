@@ -256,7 +256,7 @@ button,
 input[type="button"],
 input[type="reset"],
 input[type="submit"] {
-	border: 1px solid var(--hover-bg-color);
+	border: 1px solid var(--nav-link-color);
 	border-radius: 3px;
 	background: #006b81;
 	color: var(--font-alt-color);
@@ -300,6 +300,7 @@ input[type="submit"] {
 }
 [type="reset"] {
 	float: right;
+	background: #767676;
 }
 button:hover,
 button:focus,
