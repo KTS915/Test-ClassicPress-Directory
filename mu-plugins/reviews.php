@@ -236,8 +236,8 @@ function kts_email_faculty_protocol( $new_status, $old_status, $post ) {
 
 	$subject = 'Review of ' . esc_html( $software->post_title ) . ': ' . esc_html( ucwords( $software->post_type ) ) . ' Submission ID #' . absint( $software_ids[0] );
 
-	$message = esc_html( $post->post_content ) . '<p>Please do not respond to this review by email, as this email address is not monitored. If you need to modify your code to comply with the requirements of the review, you should use the <a href="' . esc_url( home_url( '/code-review-response-form/' ) ) . '">Code Review Response Form</a>. If you simply wish to ask a question, you should do that on Slack or the <a href="https://forums.classicpress.net/">ClassicPress forums</a>.</p>';
-	
+	$message = esc_html( $post->post_content ) . '<p>Please do not respond to this review by email, as this email address is not monitored. If you need to modify your code to comply with the requirements of the review, you should use the <a href="' . esc_url( home_url( '/code-review-response-form/?reviewed-item-id=' . absint( $software_ids[0] ) . '&reviewed-item-name=' . urlencode( $software->post_title ) . '&reviewed-item-type=' . $software->post_type ) ) . '">Code Review Response Form</a>. If you simply wish to ask a question, you should do that on Slack or the <a href="https://forums.classicpress.net/">ClassicPress forums</a>.</p>';
+
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 	wp_mail( $author->user_email, $subject, $message, $headers );

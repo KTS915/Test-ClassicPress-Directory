@@ -87,34 +87,51 @@ function kts_render_review_response_form() {
 				echo '<div class="success-message" role="polite"><p>' . __( 'Your comments have been submitted successfully. Your reviewer will respond by email.', 'classicpress' ) . '</p></div>';
 			}
 		}
+
+		# Get info from query
+		if ( isset( $_REQUEST['reviewed-item-name'] ) ) {
+			$precompiled_name = 'value="' . sanitize_text_field( wp_unslash( $_REQUEST['reviewed-item-name'] ) ) . '"';
+		} else {
+			$precompiled_name = '';
+		}
+		if ( isset( $_REQUEST['reviewed-item-id'] ) ) {
+			$precompiled_id = 'value="' . (int) wp_unslash( $_REQUEST['reviewed-item-id'] ) . '"';
+		} else {
+			$precompiled_id = '';
+		}
+		if ( isset( $_REQUEST['reviewed-item-type'] ) && in_array( $_REQUEST['reviewed-item-type'], ['plugin', 'theme', 'snippet'] ) ) {
+			$precompiled_type = wp_unslash( $_REQUEST['reviewed-item-type'] );
+		} else {
+			$precompiled_type = '';
+		}
 		?>
 
 		<form id="review-code-response-form" method="post" autocomplete="off">
 
 			<label for="name"><?php _e( 'Name of Software', 'classicpress' ); ?></label>
-			<input id="name" name="name" type="text" required>
+			<input id="name" name="name" type="text" <?php echo $precompiled_name; ?> required>
 
 			<fieldset>
 				<legend><?php _e( 'Select Type of Software', 'classicpress' ); ?></legend>
 				<div class="clear"></div>
 				<label for="plugin">
-					<input id="plugin" class="mgr-lg" name="software-type" type="radio" value="plugin" required>
+					<input id="plugin" class="mgr-lg" name="software-type" type="radio" value="plugin" <?php checked( $precompiled_type, 'plugin') ?> required>
 					Plugin
 				</label>
 				<br>
 				<label for="theme">
-					<input id="theme" class="mgr-lg" name="software-type" type="radio" value="theme" required>
+					<input id="theme" class="mgr-lg" name="software-type" type="radio" value="theme" <?php checked( $precompiled_type, 'theme') ?> required>
 					Theme
 				</label>
 				<br>
 				<label for="snippet">
-					<input id="snippet" class="mgr-lg" name="software-type" type="radio" value="snippet" required>
+					<input id="snippet" class="mgr-lg" name="software-type" type="radio" value="snippet" <?php checked( $precompiled_type, 'snippet') ?> required>
 					Code Snippet
 				</label>
 			</fieldset>
 
 			<label for="software_id"><?php _e( 'Software ID (shown on the review)', 'classicpress' ); ?></label>
-			<input id="software_id" name="software_id" type="number" min="1" required>
+			<input id="software_id" name="software_id" type="number" min="1" <?php echo $precompiled_id; ?> required>
 
 			<label for="comments"><?php _e( 'Comments in response to code review', 'classicpress' ); ?></label>
 			<textarea id="comments" name="comments" required></textarea>
@@ -151,7 +168,7 @@ function kts_review_response_form_redirect() {
 
 	# If nonce is wrong
 	$nonce = cp_check_nonce( $_POST['cp-response-name'], $_POST['cp-response-value'] );
-	$referer = remove_query_arg( 'notification', wp_get_referer() );
+	$referer = remove_query_arg( [ 'notification', 'reviewed-item-name', 'reviewed-item-id', 'reviewed-item-type' ] , wp_get_referer() );
 
 	if ( $nonce === false ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=nonce-wrong' ) );
