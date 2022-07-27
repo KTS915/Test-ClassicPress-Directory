@@ -61,26 +61,26 @@ function kts_software_update_link_redirect() {
 	}
 
 	# Construct the URL to the GitHub API
-	$download_link = get_post_meta( $software_id, 'download-link', true );
+	$download_link = get_post_meta( $software_id, 'download_link', true );
 	$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
 	$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
 	$github_url = $repo_url . 'releases/latest';
-
 	# Make GET request to GitHub API to retrieve latest software download link
 	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ) ) ) );
 	$new_link = ( $result && $result->assets ) ? $result->assets[0]->browser_download_url : '';
 
 	# Check that URL to download software is to a later release	
-	preg_match( '~releases\/download\/v[\s\S]+?\/~', $download_link, $orig_matches );
-	$orig_version = str_replace( ['releases/download/v', '/'], '', $orig_matches[0] );
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
+	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
 
-	preg_match( '~releases\/download\/v[\s\S]+?\/~', $new_link, $new_matches );
-	$new_version = str_replace( ['releases/download/v', '/'], '', $new_matches[0] );
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
+	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
 
 	# Update download link and current version if newer
 	if ( version_compare( $new_version, $orig_version ) === 1 ) {
-		update_post_meta( $software_id, 'download-link', $new_link );
-		update_post_meta( $software_id, 'current-version', $new_version );
+		update_post_meta( $software_id, 'download_link', $new_link );
+		update_post_meta( $software_id, 'current_version', $new_version );
+
 	}
 
 	# Generate success message
@@ -104,7 +104,7 @@ function kts_cron_update_download_links() {
 	foreach( $posts as $key => $post ) {
 
 		# Get software ID and construct the URL to the GitHub API
-		$download_link = get_post_meta( $post->ID, 'download-link', true );
+		$download_link = get_post_meta( $post->ID, 'download_link', true );
 		$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
 		$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
 		$github_url = $repo_url . 'releases/latest';
@@ -119,16 +119,16 @@ function kts_cron_update_download_links() {
 		if ( ! empty( $new_link ) ) {
 
 			# Check that URL to download software is to a later release	
-			preg_match( '~releases\/download\/v[\s\S]+?\/~', $download_link, $orig_matches );
-			$orig_version = str_replace( ['releases/download/v', '/'], '', $orig_matches[0] );
+			preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
+			$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
 
-			preg_match( '~releases\/download\/v[\s\S]+?\/~', $new_link, $new_matches );
-			$new_version = str_replace( ['releases/download/v', '/'], '', $new_matches[0] );
+			preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
+			$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
 
 			# Update download link and current version if newer
 			if ( version_compare( $new_version, $orig_version ) === 1 ) {
-				update_post_meta( $post->ID, 'download-link', $new_link );
-				update_post_meta( $post->ID, 'current-version', $new_version );
+				update_post_meta( $post->ID, 'download_link', $new_link );
+				update_post_meta( $post->ID, 'current_version', $new_version );
 			}
 
 			# Break into groups of 10 to keep manageable
