@@ -25,9 +25,8 @@ function kts_registration_form_fields() { ?>
 	</p>
 
 	<p>
-		<label for="repo_url"><?php _e( 'Developer Repository URL', 'classicpress' ) ?></label>
-		<div id="repo_explain"><?php _e( '(full URL beginning https://github.com/)', 'classicpress' ); ?></div>
-		<input id="repo_url" name="repo_url" type="url" aria-describedby="repo_explain" required>
+		<label for="github_username"><?php _e( 'GitHub Username (or GitHub Org Name)', 'classicpress' ) ?></label>
+		<input id="github_username" name="github_username" type="text" required>
 	</p>
 
 <?php
@@ -46,14 +45,32 @@ function kts_registration_errors( $errors, $sanitized_user_login, $user_email ) 
 		$errors->add( 'last_name_error', __( '<strong>ERROR</strong>: Please enter your last name.', 'classicpress' ) );
 	}
 
-	if ( empty( $_POST['repo_url'] ) ) {
-		$errors->add( 'repo_url_error', __( '<strong>ERROR</strong>: Please enter your GitHub repository URL.', 'classicpress' ) );
+	if ( empty( $_POST['github_username'] ) ) {
+		$errors->add( 'github_username_error', __( '<strong>ERROR</strong>: Please enter your GitHub username.', 'classicpress' ) );
 	}
-	elseif ( filter_var( $_POST['repo_url'], FILTER_VALIDATE_URL ) === false ) {
-		$errors->add( 'invalid_url_error', __( '<strong>ERROR</strong>: Your GitHub repository URL must be a valid URL.', 'classicpress' ) );
-	}
-	elseif ( strpos( $_POST['repo_url'], 'https://github.com/' ) !== 0 ) {
-		$errors->add( 'invalid_url_error', __( '<strong>ERROR</strong>: You must specify a URL to a GitHub repository.', 'classicpress' ) );
+	else {
+		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
+		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
+		$user = get_user_by( 'email', $user_email );
+
+		$user_ids = get_users( array(
+			'fields' => 'ID',
+			'exclude' => array( $user->ID ),
+			'meta_key' => 'github_username',
+			'meta_value' => $github_username,
+		) );
+
+		if ( ! empty( $user_ids ) ) {
+			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
+		}
+		
+		# Check if there's a GitHub repo associated with this username
+		$github_api = 'https://api.github.com/users/' . $github_username;
+		$github_repo = wp_remote_get( $github_api );
+		$data = json_decode( wp_remote_retrieve_body( $github_repo ) );
+		if ( empty( $data ) || empty( $data->repos_url ) ) {
+			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: There is no GitHub repository associated with this GitHub username.', 'classicpress' ) );
+		}
 	}
 
 	return $errors;
@@ -73,20 +90,31 @@ function kts_register_custom_fields( $user_id ) {
 		return;
 	}
 
-	# Require Github Repo URL if not an editor or administrator
-	if ( ! is_user_logged_in() || ! current_user_can( 'edit_pages' ) ) {
+	# Require Github username
+	if ( empty( $_POST['github_username'] ) ) {
+		return;
+	}
 
-		if ( empty( $_POST['repo_url'] ) ) {
-			return;
-		}
+	# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
+	$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
 
-		if ( filter_var( $_POST['repo_url'], FILTER_VALIDATE_URL ) === false ) {
-			return;
-		}
+	$user_ids = get_users( array(
+		'fields' => 'ID',
+		'exclude' => array( $user_id ),
+		'meta_key' => 'github_username',
+		'meta_value' => $github_username,
+	) );
 
-		if ( strpos( $_POST['repo_url'], 'https://github.com/' ) !== 0 ) {
-			return;
-		}
+	if ( ! empty( $user_ids ) ) {
+		return;
+	}
+
+	# Check if there's a GitHub repo associated with this username
+	$github_api = 'https://api.github.com/users/' . $github_username;
+	$github_repo = wp_remote_get( $github_api );
+	$data = json_decode( wp_remote_retrieve_body( $github_repo ) );
+	if ( empty( $data ) || empty( $data->repos_url ) ) {
+		return;
 	}
 
 	# OK to update custom fields
@@ -96,8 +124,7 @@ function kts_register_custom_fields( $user_id ) {
 	$last_name = sanitize_text_field( wp_unslash( $_POST['last_name'] ) );
 	update_user_meta( $user_id, 'last_name', $last_name );
 
-	$repo_url = esc_url_raw( wp_unslash( $_POST['repo_url'] ) );
-	update_user_meta( $user_id, 'repo_url', $repo_url );
+	update_user_meta( $user_id, 'github_username', $github_username );
 }
 add_action( 'user_register', 'kts_register_custom_fields' );
 add_action( 'edit_user_created_user', 'kts_register_custom_fields' ); // backend
@@ -109,15 +136,14 @@ add_action( 'edit_user_profile_update', 'kts_register_custom_fields' );
 function kts_user_admin_register_custom_fields( $user ) { ?>
 	
 	<table class="form-table">
-		<tr class="form-field form-required">
+		<tr>
 			<th scope="row">
-				<label for="repo_url"><?php _e( 'Developer Repository URL', 'classicpress' ) ?></label> <span class="description"><?php _e( '(required)', 'classicpress' ); ?></span>
+				<label for="github_username"><?php _e( 'GitHub Username', 'classicpress' ) ?></label> <span class="description"><?php _e( '(required)', 'classicpress' ); ?></span>
 			</th>
 
 			<td>
-				<input id="repo_url" name="repo_url" type="url" class="code" aria-describedby="repo_explain" value="<?php echo esc_url( get_user_meta( $user->ID, 'repo_url', true ) ); ?>" required>
+				<input id="github_username" name="github_username" type="text" class="regular-text" value="<?php echo esc_attr( get_user_meta( $user->ID, 'github_username', true ) ); ?>" required>
 				<br>
-				<div id="repo_explain"><?php _e( 'Full URL beginning https://github.com/', 'classicpress' ); ?></div>
 			</td>
 		</tr>
 	</table>
@@ -141,16 +167,31 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 		$errors->add( 'last_name_error', __( '<strong>ERROR</strong>: Please enter a last name.', 'classicpress' ) );
 	}
 
-	# Require Github Repo URL if not an editor or administrator
-	if ( ! current_user_can( 'edit_pages' ) ) {
-		if ( empty( $_POST['repo_url'] ) ) {
-			$errors->add( 'repo_url_error', __( '<strong>ERROR</strong>: Please enter a GitHub repository URL.', 'classicpress' ) );
+	# Require Github username
+	if ( empty( $_POST['github_username'] ) ) {
+		$errors->add( 'github_username_error', __( '<strong>ERROR</strong>: Please enter your GitHub username.', 'classicpress' ) );
+	}
+	else {
+		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
+		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
+
+		$user_ids = get_users( array(
+			'fields' => 'ID',
+			'exclude' => array( $user->ID ),
+			'meta_key' => 'github_username',
+			'meta_value' => $github_username,
+		) );
+
+		if ( ! empty( $user_ids ) ) {
+			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
 		}
-		elseif ( filter_var( $_POST['repo_url'], FILTER_VALIDATE_URL ) === false ) {
-			$errors->add( 'invalid_url_error', __( '<strong>ERROR</strong>: The GitHub repository URL must be a valid URL.', 'classicpress' ) );
-		}
-		elseif ( strpos( $_POST['repo_url'], 'https://github.com/' ) !== 0 ) {
-			$errors->add( 'invalid_url_error', __( '<strong>ERROR</strong>: You must specify a URL to a GitHub repository.', 'classicpress' ) );
+		
+		# Check if there's a GitHub repo associated with this username
+		$github_api = 'https://api.github.com/users/' . $github_username;
+		$github_repo = wp_remote_get( $github_api );
+		$data = json_decode( wp_remote_retrieve_body( $github_repo ) );
+		if ( empty( $data ) || empty( $data->repos_url ) ) {
+			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: There is no GitHub repository associated with this GitHub username.', 'classicpress' ) );
 		}
 	}
 }
@@ -162,7 +203,7 @@ function kts_add_user_admin_columns( $columns ) {
 	$columns['plugin'] = __( 'Plugins', 'classicpress' );
 	$columns['theme'] = __( 'Themes', 'classicpress' );
 	$columns['snippet'] = __( 'Snippets', 'classicpress' );
-	$columns['repo_url'] = __( 'Repo URL', 'classicpress' );
+	$columns['github_username'] = __( 'GitHub Username', 'classicpress' );
 	$columns['last_login'] = __( 'Last Login', 'classicpress' );
 	unset( $columns['posts'] );
 	return $columns;
@@ -182,8 +223,8 @@ function kts_user_meta_columns( $custom_column, $column_name, $user_id ) {
 		case 'snippet':
 			return count_user_posts( $user_id, 'snippet' );
 		break;
-		case 'repo_url':
-			return get_user_meta( $user_id, 'repo_url', true );
+		case 'github_username':
+			return get_user_meta( $user_id, 'github_username', true );
 		break;
 		case 'last_login':
 			$last_login = (int) get_user_meta( $user_id, 'last_login', true );
