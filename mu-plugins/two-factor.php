@@ -70,8 +70,10 @@ function kts_email_admins_when_2fa_enabled( $check, $user_id, $meta_key, $meta_v
 
 			$message = $user->display_name . __( ' has enabled 2FA. You may now consider upgrading them to the Contributor role at ' . make_clickable( esc_url( $profile_url ) ) . '.' );
 
+			$headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
 			foreach( $admins as $admin ) {
-				wp_mail( $admin->user_email, $subject, $message );
+				wp_mail( $admin->user_email, $subject, $message, $headers );
 			}
 
 			update_user_meta( $user_id, 'two-factor-enabled', 1 );
@@ -83,20 +85,13 @@ function kts_email_admins_when_2fa_enabled( $check, $user_id, $meta_key, $meta_v
 add_filter( 'update_user_metadata', 'kts_email_admins_when_2fa_enabled', 10, 5 );
 
 
-/* PREVENT SUBSCRIBERS AND CONTRIBUTORS DEACTIVATING 2FA ONCE ACTIVATED */
+/* PREVENT CONTRIBUTORS AND ABOVE DEACTIVATING 2FA */
 function kts_prevent_2fa_removal( $providers ) {
-	$user = wp_get_current_user();
-	$roles = array( 'subscriber', 'contributor' );
 
-	# Bail if the current user is not a subscriber or contributor
-	if ( count( array_intersect( $roles, $user->roles ) ) === 0 ) {
-		return $providers;
-	}
-
-	$two_fa = get_user_meta( $user->ID, 'two-factor-enabled', true );
-
-	if ( ! empty( $two_fa ) && empty( $providers ) && class_exists( 'Two_Factor_Email' ) ) {
-		$providers[] = 'Two_Factor_Email';
+	if ( current_user_can( 'edit_posts' ) ) {
+		if ( empty( $providers ) && class_exists( 'Two_Factor_Email' ) ) {
+			$providers[] = 'Two_Factor_Email';
+		}
 	}
 
 	return $providers;
