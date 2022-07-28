@@ -134,7 +134,20 @@ function kts_cron_update_download_links() {
 		$github_url = $repo_url . 'releases/latest';
 
 		# Make GET request to GitHub API to retrieve latest software download link
-		$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ) ) ) );
+		if ( defined ( 'GITHUB_API_TOKEN' ) ) {
+			$auth = [
+				'headers' => [
+					'Authorization' => 'token ' . GITHUB_API_TOKEN,
+				],
+			];
+		} else {
+			$auth = [];
+		}
+		$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
+		if ( isset ( $result->message ) ) {
+			trigger_error ( 'Something went wrong with GitHub API on item ' . $post->ID . ': ' . esc_html( $result->message ) );
+			continue;
+		}
 		$new_link = '';
 		if ( ! empty( $result ) && ! empty( $result->assets ) ) {
 			$new_link = $result->assets[0]->browser_download_url;
