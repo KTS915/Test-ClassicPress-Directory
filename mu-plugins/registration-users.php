@@ -91,10 +91,13 @@ function kts_register_custom_fields( $user_id ) {
 
 	# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
 	$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
+	$current_gu = get_user_meta( $user_id, 'github_username', true );
 
-	$github_usernames = kts_get_github_usernames( $user_id );
-	if ( in_array( $github_username, $github_usernames ) ) {
-		return;
+	if ( ! empty( $current_gu ) && $github_username !== $current_gu ) {
+		$github_usernames = kts_get_github_usernames( $user_id );
+		if ( in_array( $github_username, $github_usernames ) ) {
+			return;
+		}
 	}
 
 	# Check if there's a GitHub repo associated with this username
@@ -164,10 +167,13 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 	else {
 		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
 		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
+		$current_gu = get_user_meta( $user->ID, 'github_username', true );
 
-		$github_usernames = kts_get_github_usernames( $user->ID );
-		if ( in_array( $github_username, $github_usernames ) ) {
-			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
+		if ( ! empty( $current_gu ) && $github_username !== $current_gu ) {
+			$github_usernames = kts_get_github_usernames( $user->ID );
+			if ( in_array( $github_username, $github_usernames ) ) {
+				$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
+			}
 		}
 		
 		# Check if there's a GitHub repo associated with this username
