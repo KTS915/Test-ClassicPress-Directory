@@ -142,7 +142,9 @@ function kts_register_custom_fields( $user_id ) {
 				'fields' => 'ids',
 			)
 		);
-		wp_delete_term( $current_gu_tax_term_ids[0], 'github_usernames' );
+		if ( ! empty( $current_gu_tax_term_ids ) ) {
+			wp_delete_term( $current_gu_tax_term_ids[0], 'github_usernames' );
+		}
 	}
 
 	# OK to update custom fields
