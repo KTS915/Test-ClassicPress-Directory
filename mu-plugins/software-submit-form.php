@@ -9,6 +9,36 @@
  * Version: 0.1
  */
 
+function kts_get_plugin_data( $file_data ) {
+	$default_headers = array(
+		'Name' => 'Plugin Name',
+		'PluginURI' => 'Plugin URI',
+		'Version' => 'Version',
+		'Description' => 'Description',
+		'Author' => 'Author',
+		'AuthorURI' => 'Author URI',
+		'TextDomain' => 'Text Domain',
+		'DomainPath' => 'Domain Path',
+		'Network' => 'Network',
+		'RequiresWP'  => 'Requires at least',
+		'RequiresPHP' => 'Requires PHP',
+	);
+	$plugin_data = kts_get_file_data( $file_data, $default_headers );
+	$plugin_data['Network'] = ( 'true' == strtolower( $plugin_data['Network'] ) );
+	return $plugin_data;
+}
+
+function kts_get_file_data( $file_data, $all_headers ) {
+	$file_data = str_replace( "\r", "\n", $file_data );
+	foreach ( $all_headers as $field => $regex ) {
+		if ( preg_match( '/^[ \t\/*#@]*' . preg_quote( $regex, '/' ) . ':(.*)$/mi', $file_data, $match ) && $match[1] )
+			$all_headers[ $field ] = _cleanup_header_comment( $match[1] );
+		else
+			$all_headers[ $field ] = '';
+	}
+	return $all_headers;
+}
+
 function kts_render_software_submit_form() {
 	$user_id = get_current_user_id();
 	$two_fa = kts_2fa_enabled( $user_id );
@@ -377,12 +407,44 @@ function kts_software_submit_form_redirect() {
 	# Find slug from top level folder name
 	$zip = new ZipArchive();
 	$zip->open( $file['tmp_name'] );
-	$dir = trim( $zip->getNameIndex(0), '/' );
-	$slug = strstr( $dir, '/', true );
+	$slug = false;
+	$basedir = strstr( $zip->getNameIndex(0), '/', true );
+	
+	# Deal with themes
+	if ( $post_type === 'theme' ) {
+		$slug = strstr( $zip->getNameIndex(0), '/', true );
+		$headers = [];
+	}
+	
+	# Check if most common slug contain headers.
+	$guessed_slug = $basedir . '/' . $basedir . '.php';
+	if ( $slug === false && $file_data = $zip->getFromName( $guessed_slug, 8192 ) ) {
+		$headers = kts_get_plugin_data( $file_data );
+		if ( isset( $headers['Name'] ) && $headers['Name'] !== '' ) {
+			$slug = $guessed_slug;
+		}
+	}
+
+	if ( $slug === false ) {
+		# Parse other files for headers
+		for ($i = 0; $i < $zip->numFiles; $i++) {
+			if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+				// Only check PHP and don't recourse into subdirs.
+				continue;
+			}
+			if ( $file_data = $zip->getFromIndex( $i, 8192 ) ) {
+				$headers = kts_get_plugin_data( $file_data );
+				if ( isset( $headers['Name'] ) && $headers['Name'] !== '' ) {
+					$slug = $zip->getNameIndex( $i );
+					break;
+				}
+			}
+		}
+	}
 
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
-
+	
 	# Prevent form title being all upper case
 	$title = sanitize_text_field( wp_unslash( $_POST['name'] ) );
 	if ( strtoupper( $title ) === $title ) { // all upper case
