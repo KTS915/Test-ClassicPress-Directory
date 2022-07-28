@@ -26,7 +26,6 @@ body.login div#login p#nav a:hover,
 body.login div#login p#backtoblog a:hover {
 	text-decoration: none;
 }
-body.login #login_error,
 body.login .message,
 body.login .success {
 	border-left: 4px solid #034a59;
