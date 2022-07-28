@@ -148,7 +148,7 @@ function kts_list_developers() {
 
 		$developers .= '</div>';
 
-		set_transient( 'faculty', $developers, MONTH_IN_SECONDS );
+		set_transient( 'developers', $developers, MONTH_IN_SECONDS );
 	}
 
 	echo $developers;
