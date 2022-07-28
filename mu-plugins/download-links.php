@@ -28,6 +28,9 @@ function kts_render_software_update_link_form( $post ) {
 		if ( $_GET['notification'] === 'nonce-wrong-' . absint( $post->ID ) ) {
 			echo '<div class="error-message" role="alert"><p>' . __( 'You have already submitted this.', 'classicpress' ) . '</p></div>';
 		}
+		elseif ( $_GET['notification'] === 'github-api-wrong-' . absint( $post->ID ) ) {
+			echo '<div class="error-message" role="alert"><p>' . __( 'Something went wrong with GitHub API.', 'classicpress' ) . '</p></div>';
+		}
 		elseif ( $_GET['notification'] === 'success-' . absint( $post->ID ) ) {
 			echo '<div class="success-message" role="polite"><p>' . __( 'The link has been updated.', 'classicpress' ) . '</p></div>';
 		}
@@ -65,8 +68,29 @@ function kts_software_update_link_redirect() {
 	$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
 	$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
 	$github_url = $repo_url . 'releases/latest';
+
 	# Make GET request to GitHub API to retrieve latest software download link
-	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ) ) ) );
+	# To use a GitHub API token put define('GITHUB_API_TOKEN', 'YOURTOKENVALU'); in wp-config.php
+	# To create a token, go to https://github.com/settings/tokens and generate a new token.
+	# When generting the new token don't select any scope.
+	if ( defined ( 'GITHUB_API_TOKEN' ) ) {
+		$auth = [
+			'headers' => [
+				'Authorization' => 'token ' . GITHUB_API_TOKEN,
+			],
+		];
+	} else {
+		$auth = [];
+	}
+
+	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
+
+	if ( isset ( $result->message ) ) {
+		trigger_error ( 'Something went wrong with GitHub API on item ' . $software_id . ': ' . esc_html( $result->message ) );
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-api-wrong-' . $software_id ) );
+		exit;
+	}
+
 	$new_link = ( $result && $result->assets ) ? $result->assets[0]->browser_download_url : '';
 
 	# Check that URL to download software is to a later release	
@@ -80,12 +104,12 @@ function kts_software_update_link_redirect() {
 	if ( version_compare( $new_version, $orig_version ) === 1 ) {
 		update_post_meta( $software_id, 'download_link', $new_link );
 		update_post_meta( $software_id, 'current_version', $new_version );
-
 	}
 
 	# Generate success message
 	wp_safe_redirect( esc_url_raw( $referer . '?notification=success-' . $software_id ) );
 	exit;
+
 }
 add_action( 'template_redirect', 'kts_software_update_link_redirect' );
 
@@ -110,7 +134,20 @@ function kts_cron_update_download_links() {
 		$github_url = $repo_url . 'releases/latest';
 
 		# Make GET request to GitHub API to retrieve latest software download link
-		$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ) ) ) );
+		if ( defined ( 'GITHUB_API_TOKEN' ) ) {
+			$auth = [
+				'headers' => [
+					'Authorization' => 'token ' . GITHUB_API_TOKEN,
+				],
+			];
+		} else {
+			$auth = [];
+		}
+		$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
+		if ( isset ( $result->message ) ) {
+			trigger_error ( 'Something went wrong with GitHub API on item ' . $post->ID . ': ' . esc_html( $result->message ) );
+			continue;
+		}
 		$new_link = '';
 		if ( ! empty( $result ) && ! empty( $result->assets ) ) {
 			$new_link = $result->assets[0]->browser_download_url;
