@@ -8,6 +8,24 @@
  * Author URI: https://timkaye.org/
  * Version: 0.1.0
  **/
+ 
+/* REGISTER CUSTOM USER TAXONOMY */
+# Enables scalable querying when checking value directly
+function kts_register_github_taxonomy() {
+
+	# https://tomjn.com/2018/03/16/utility-taxonomies/
+	$args = array(
+		'hierarchical'		=> false,
+		'label'				=> __( 'GitHub Usernames', 'classicpress' ),
+		'show_ui'			=> false,
+		'public'			=> false,
+		'show_admin_column'	=> false,
+		'rewrite'			=> false,
+	);
+	register_taxonomy( 'github_usernames', 'user', $args );
+}
+add_action( 'init', 'kts_register_github_taxonomy' );
+
 
 /* ADD CUSTOM FIELDS TO REGISTRATION FORM */
 function kts_registration_form_fields() { ?>
@@ -51,10 +69,14 @@ function kts_registration_errors( $errors, $sanitized_user_login, $user_email ) 
 	else {
 		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
 		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
-		$user = get_user_by( 'email', $user_email );
 
-		$github_usernames = kts_get_github_usernames( $user->ID );
-		if ( in_array( $github_username, $github_usernames ) ) {
+		$github_usernames = get_terms( array(
+			'taxonomy' => 'github_usernames',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+
+		if ( in_array( sanitize_title( $github_username ), $github_usernames ) ) {
 			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
 		}
 		
@@ -89,23 +111,38 @@ function kts_register_custom_fields( $user_id ) {
 		return;
 	}
 
-	# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
+	# Check if there's a GitHub repo associated with this GitHub Username
 	$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
-	$current_gu = get_user_meta( $user_id, 'github_username', true );
-
-	if ( ! empty( $current_gu ) && $github_username !== $current_gu ) {
-		$github_usernames = kts_get_github_usernames( $user_id );
-		if ( in_array( $github_username, $github_usernames ) ) {
-			return;
-		}
-	}
-
-	# Check if there's a GitHub repo associated with this username
 	$github_api = 'https://api.github.com/users/' . $github_username;
 	$github_repo = wp_remote_get( $github_api );
 	$data = json_decode( wp_remote_retrieve_body( $github_repo ) );
 	if ( empty( $data ) || empty( $data->repos_url ) ) {
 		return;
+	}
+
+	# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
+	$current_gu = get_user_meta( $user_id, 'github_username', true );
+
+	if ( $github_username !== $current_gu ) {
+		$github_usernames = get_terms( array(
+			'taxonomy' => 'github_usernames',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+
+		if ( in_array( sanitize_title( $github_username ), $github_usernames ) ) {
+			return;
+		}
+
+		# Good to go, so delete current taxonomy term
+		$current_gu_tax_term_ids = wp_get_object_terms(
+			$user_id, 
+			'github_usernames',
+			array(
+				'fields' => 'ids',
+			)
+		);
+		wp_delete_term( $current_gu_tax_term_ids[0], 'github_usernames' );
 	}
 
 	# OK to update custom fields
@@ -115,9 +152,9 @@ function kts_register_custom_fields( $user_id ) {
 	$last_name = sanitize_text_field( wp_unslash( $_POST['last_name'] ) );
 	update_user_meta( $user_id, 'last_name', $last_name );
 
-	# Delete transient holding all GitHub usernames and add this one for user
-	delete_transient( 'github_usernames' );
+	# Add both meta and custom taxonomy for GitHub Username
 	update_user_meta( $user_id, 'github_username', $github_username );
+	wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
 }
 add_action( 'user_register', 'kts_register_custom_fields' );
 add_action( 'edit_user_created_user', 'kts_register_custom_fields' ); // backend
@@ -169,9 +206,14 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
 		$current_gu = get_user_meta( $user->ID, 'github_username', true );
 
-		if ( ! empty( $current_gu ) && $github_username !== $current_gu ) {
-			$github_usernames = kts_get_github_usernames( $user->ID );
-			if ( in_array( $github_username, $github_usernames ) ) {
+		if ( $github_username !== $current_gu ) {			
+			$github_usernames = get_terms( array(
+				'taxonomy' => 'github_usernames',
+				'hide_empty' => false,
+				'fields' => 'names',
+			) );
+
+			if ( in_array( sanitize_title( $github_username ), $github_usernames ) ) {
 				$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
 			}
 		}
@@ -186,29 +228,6 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 	}
 }
 add_action( 'user_profile_update_errors', 'kts_user_profile_update_errors', 10, 3 );
-
-
-/* FUNCTION TO RETRIEVE ARRAY OF GITHUB USERNAMES */
-function kts_get_github_usernames( $user_id ) {
-
-	$github_usernames = get_transient( 'github_usernames' );
-
-	if ( empty( $github_usernames ) ) {
-		$user_ids = get_users( array(
-			'fields' => 'ID',
-			'count_total' => false,
-			'exclude' => array( $user_id ),
-		) );
-
-		$github_usernames = [];
-		foreach( $user_ids as $uid ) {
-			$github_usernames[] = get_user_meta( $uid, 'github_username', true );
-		}
-		set_transient( 'github_usernames', $github_usernames, MONTH_IN_SECONDS );
-	}
-
-	return $github_usernames;
-}
 
 
 /* DISPLAY EXTRA INFO ON USERS LIST ADMIN PAGE */
