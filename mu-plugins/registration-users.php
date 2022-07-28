@@ -53,14 +53,8 @@ function kts_registration_errors( $errors, $sanitized_user_login, $user_email ) 
 		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
 		$user = get_user_by( 'email', $user_email );
 
-		$user_ids = get_users( array(
-			'fields' => 'ID',
-			'exclude' => array( $user->ID ),
-			'meta_key' => 'github_username',
-			'meta_value' => $github_username,
-		) );
-
-		if ( ! empty( $user_ids ) ) {
+		$github_usernames = kts_get_github_usernames( $user->ID );
+		if ( in_array( $github_username, $github_usernames ) ) {
 			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
 		}
 		
@@ -98,14 +92,8 @@ function kts_register_custom_fields( $user_id ) {
 	# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
 	$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
 
-	$user_ids = get_users( array(
-		'fields' => 'ID',
-		'exclude' => array( $user_id ),
-		'meta_key' => 'github_username',
-		'meta_value' => $github_username,
-	) );
-
-	if ( ! empty( $user_ids ) ) {
+	$github_usernames = kts_get_github_usernames( $user_id );
+	if ( in_array( $github_username, $github_usernames ) ) {
 		return;
 	}
 
@@ -124,6 +112,8 @@ function kts_register_custom_fields( $user_id ) {
 	$last_name = sanitize_text_field( wp_unslash( $_POST['last_name'] ) );
 	update_user_meta( $user_id, 'last_name', $last_name );
 
+	# Delete transient holding all GitHub usernames and add this one for user
+	delete_transient( 'github_usernames' );
 	update_user_meta( $user_id, 'github_username', $github_username );
 }
 add_action( 'user_register', 'kts_register_custom_fields' );
@@ -175,14 +165,8 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
 		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
 
-		$user_ids = get_users( array(
-			'fields' => 'ID',
-			'exclude' => array( $user->ID ),
-			'meta_key' => 'github_username',
-			'meta_value' => $github_username,
-		) );
-
-		if ( ! empty( $user_ids ) ) {
+		$github_usernames = kts_get_github_usernames( $user->ID );
+		if ( in_array( $github_username, $github_usernames ) ) {
 			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
 		}
 		
@@ -196,6 +180,29 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 	}
 }
 add_action( 'user_profile_update_errors', 'kts_user_profile_update_errors', 10, 3 );
+
+
+/* FUNCTION TO RETRIEVE ARRAY OF GITHUB USERNAMES */
+function kts_get_github_usernames( $user_id ) {
+
+	$github_usernames = get_transient( 'github_usernames' );
+
+	if ( empty( $github_usernames ) ) {
+		$user_ids = get_users( array(
+			'fields' => 'ID',
+			'count_total' => false,
+			'exclude' => array( $user_id ),
+		) );
+
+		$github_usernames = [];
+		foreach( $user_ids as $uid ) {
+			$github_usernames[] = get_user_meta( $uid, 'github_username', true );
+		}
+		set_transient( 'github_usernames', $github_usernames, MONTH_IN_SECONDS );
+	}
+
+	return $github_usernames;
+}
 
 
 /* DISPLAY EXTRA INFO ON USERS LIST ADMIN PAGE */
