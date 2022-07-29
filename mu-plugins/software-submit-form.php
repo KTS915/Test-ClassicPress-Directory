@@ -51,14 +51,14 @@ function kts_render_software_submit_form() {
 	elseif ( ! current_user_can( 'edit_posts' ) ) { // Not a Contributor or above
 		if ( $two_fa === false ) {
 			_e( '<p>You must be approved before you can submit software for review.</p>', 'classicpress' );
-			_e( '<p><strong>IMPORTANT:</strong> Before you can be approved, you must go to your <strong><a href="' . esc_url( get_edit_profile_url( get_current_user_id() ) ) . '#two-factor-options">profile page and activate 2-Factor Authentication</a></strong>.</p>', 'classicpress' );
+			_e( '<p><strong>IMPORTANT:</strong> Before you can be approved, you must go to your <strong><a href="' . esc_url( get_edit_profile_url( $user_id ) ) . '#two-factor-options">profile page and activate 2-Factor Authentication</a></strong>.</p>', 'classicpress' );
 			_e( '<p>You will receive an email when you have been approved.</p>', 'classicpress' );
 		}
 		else {
 			$two_fa_method = get_user_meta( $user_id, '_two_factor_provider', true );
 			if ( $two_fa_method === 'Two_Factor_Dummy' ) {
 				_e( '<p>You must be approved before you can submit software for review.</p>', 'classicpress' );
-				_e( '<p><strong>IMPORTANT:</strong> Before you can be approved, you must go to your <strong><a href="' . esc_url( get_edit_profile_url( get_current_user_id() ) ) . '#two-factor-options">profile page and activate 2-Factor Authentication</a></strong>. Enabling the dummy method is not acceptable for this purpose.</p>', 'classicpress' );
+				_e( '<p><strong>IMPORTANT:</strong> Before you can be approved, you must go to your <strong><a href="' . esc_url( get_edit_profile_url( $user_id ) ) . '#two-factor-options">profile page and activate 2-Factor Authentication</a></strong>. Enabling the dummy method is not acceptable for this purpose.</p>', 'classicpress' );
 				_e( '<p>You will receive an email when you have been approved.</p>', 'classicpress' );
 			}
 			else {
