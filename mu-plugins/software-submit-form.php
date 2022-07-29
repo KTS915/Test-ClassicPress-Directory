@@ -441,8 +441,6 @@ function kts_software_submit_form_redirect() {
 		}
 	}
 
-trigger_error(print_r($headers, true));
-trigger_error(print_r($main_plugin_file, true));
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
 
