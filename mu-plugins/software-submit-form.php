@@ -9,6 +9,36 @@
  * Version: 0.1
  */
 
+function kts_get_plugin_data( $file_data ) {
+	$default_headers = array(
+		'Name'			=> 'Plugin Name',
+		'PluginURI'		=> 'Plugin URI',
+		'Version' 		=> 'Version',
+		'Description'	=> 'Description',
+		'Author'		=> 'Author',
+		'AuthorURI'		=> 'Author URI',
+		'TextDomain'	=> 'Text Domain',
+		'DomainPath'	=> 'Domain Path',
+		'Network'		=> 'Network',
+		'RequiresWP'	=> 'Requires at least',
+		'RequiresPHP'	=> 'Requires PHP',
+	);
+	$plugin_data = kts_get_file_data( $file_data, $default_headers );
+	$plugin_data['Network'] = ( 'true' == strtolower( $plugin_data['Network'] ) );
+	return $plugin_data;
+}
+
+function kts_get_file_data( $file_data, $all_headers ) {
+	$file_data = str_replace( "\r", "\n", $file_data );
+	foreach ( $all_headers as $field => $regex ) {
+		if ( preg_match( '/^[ \t\/*#@]*' . preg_quote( $regex, '/' ) . ':(.*)$/mi', $file_data, $match ) && $match[1] )
+			$all_headers[ $field ] = _cleanup_header_comment( $match[1] );
+		else
+			$all_headers[ $field ] = '';
+	}
+	return $all_headers;
+}
+
 function kts_render_software_submit_form() {
 	$user_id = get_current_user_id();
 	$two_fa = kts_2fa_enabled( $user_id );
@@ -105,14 +135,26 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'invalid-download-link' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a valid URL for the download link!', 'classicpress' ) . '</p></div>';
 			}
+			elseif ( $_GET['notification'] === 'invalid-github' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a URL for a GitHub repository!', 'classicpress' ) . '</p></div>';
+			}
 			elseif ( $_GET['notification'] === 'temp-file-error' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem creating a temporary file.', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'file-error' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem while parsing your zip file.', 'classicpress' ) . '</p></div>';
+			elseif ( $_GET['notification'] === 'duplicate-theme-slug' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'Your theme\'s slug is already taken. Please rebuild your zip file so that the top level folder within it has a unique name.', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'invalid-github' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a URL for a GitHub repository!', 'classicpress' ) . '</p></div>';
+			elseif ( $_GET['notification'] === 'duplicate-snippet-slug' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'Your snippet\'s slug is already taken. Please rebuild your zip file so that the top level folder within it has a unique name.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'duplicate-plugin-slug' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'Your plugin\'s slug is already taken. Please rebuild your zip file so that the top level folder within it has a unique name.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'github-repo-error' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem accessing the associated GitHub repository.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'github-readme-error' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem finding the software\'s README.md file.', 'classicpress' ) . '</p></div>';
 			}
 			elseif ( $_GET['notification'] === 'not-sent' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem submitting the form. Your message has not been sent.', 'classicpress' ) . '</p></div>';
@@ -151,9 +193,6 @@ function kts_render_software_submit_form() {
 			<label for="excerpt"><?php _e( 'Brief Description of Software (not more than 150 characters)', 'classicpress' ); ?></label>
 			<input id="excerpt" name="excerpt" type="text" maxlength="150" required>
 
-			<label for="description"><?php _e( 'Full Description of Software (you might like to paste the contents of your readme.txt file here)', 'classicpress' ); ?></label>
-			<textarea id="description" name="description" required></textarea>
-		
 			<fieldset id="category" hidden>
 				<legend id="cats"><?php _e( 'Specify to which of the following categories your plugin relates. (You must choose at least one.)', 'classicpress' ); ?></legend>
 				<div class="clear"></div>
@@ -303,12 +342,6 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	# Check that description of software has been provided
-	if ( empty( $_POST['description'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
-		exit;
-	}
-
 	# Check that Git provider has been provided
 	if ( empty( $_POST['git_provider'] ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-git-provider' ) );
@@ -351,12 +384,44 @@ function kts_software_submit_form_redirect() {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
 		exit;
 	}
-	
-	# Enable the download_url() and wp_handle_sideload() functions
-	require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
 	# Get download link
 	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
+
+	# Access GitHub repo and get Update URI
+	$github_api = str_replace( 'https://github.com', 'https://api.github.com/repos', $download_link );
+	$github_api = substr( $github_api, 0, strpos( $github_api, '/releases' ) );
+	$update_uri = $github_api . '/releases';
+
+	# Find default Github branch for software
+	$github_info = wp_remote_get( $github_api );
+	if ( is_wp_error( $github_info ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
+		exit;
+	}
+	$data = json_decode( wp_remote_retrieve_body( $github_info ) );
+	$default_branch = $data->default_branch;
+
+	# Get software description
+	$description = '';
+	$github_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $download_link );
+	$github_url = substr( $github_url, 0, strpos( $github_url, '/releases' ) );
+	$readme_url = $github_url . '/' . $default_branch . '/README.md';
+	$readme = wp_remote_get( $readme_url );
+
+	if ( ! empty( $readme ) ) {
+		$parsedown = new Parsedown();
+		$parsedown->setSafeMode(true);
+		$description = $parsedown->text( $readme['body'] );
+		$description = wp_kses_post( $description );
+	}
+
+	# Get current version of software
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
+	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
+
+	# Enable the download_url() and wp_handle_sideload() functions
+	require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
 	# Download (upload?) file to temp dir
 	$temp_file = download_url( $download_link, 5 ); // 5 secs before timeout
@@ -377,8 +442,67 @@ function kts_software_submit_form_redirect() {
 	# Find slug from top level folder name
 	$zip = new ZipArchive();
 	$zip->open( $file['tmp_name'] );
-	$dir = trim( $zip->getNameIndex(0), '/' );
-	$slug = strstr( $dir, '/', true );
+	$slug = strstr( $zip->getNameIndex(0), '/', true );
+
+	# Check that slug is unique
+	$slug_taxonomy = '';
+	if ( $post_type === 'theme' ) { // Themes
+		$headers = [];
+		$slugs = get_terms( array(
+			'taxonomy' => 'theme_slugs',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-theme-slug' ) );
+			exit;
+		}
+		$slug_taxonomy = 'theme_slugs';
+	}
+	elseif( $post_type === 'snippet' ) { // Snippets
+		$headers = [];
+		$slugs = get_terms( array(
+			'taxonomy' => 'snippet_slugs',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-snippet-slug' ) );
+			exit;
+		}
+		$slug_taxonomy = 'snippet_slugs';
+	}
+	else { // Plugins
+		$slugs = get_terms( array(
+			'taxonomy' => 'plugin_slugs',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-plugin-slug' ) );
+			exit;
+		}
+		$slug_taxonomy = 'plugin_slugs';
+
+		# Check if most common location for main file contain headers
+		$guessed_main_file = $slug . '/' . $slug . '.php';
+		$file_data = $zip->getFromName( $guessed_main_file, 8192 );
+		$headers = kts_get_plugin_data( $file_data );
+
+		if ( empty( $headers['RequiresPHP'] ) ) {
+
+			# Parse other files for headers
+			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+
+					# Only check PHP and don't recourse into subdirs
+					continue;
+				}
+				$file_data = $zip->getFromIndex( $i, 8192 );
+				$headers = kts_get_plugin_data( $file_data );
+			}
+		}
+	}
 
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
@@ -392,13 +516,6 @@ function kts_software_submit_form_redirect() {
 	# Get brief description of software
 	$excerpt = sanitize_text_field( wp_unslash( $_POST['excerpt'] ) );
 
-	# Get software description
-	$description = sanitize_textarea_field( wp_unslash( $_POST['description'] ) );
-
-	# Get current version of software
-	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
-	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
-
 	# Get git provider
 	$git_provider = sanitize_text_field( wp_unslash( $_POST['git_provider'] ) );
 
@@ -409,14 +526,14 @@ function kts_software_submit_form_redirect() {
 	$post_info = array(
 		'post_title'	=> $title,
 		'post_excerpt'	=> $excerpt,
-		'post_content'	=> $description,
+		'post_content'	=> ( ! empty( $description ) ) ? $description : wp_kses_post( $headers['Description'] ),
 		'post_type'		=> $post_type,
 		'post_status'	=> 'draft',
 		'post_author'	=> get_current_user_id(),
 		'comment_status'=> 'closed',
 	);
 
-	# Add category if software is a plugin
+	# Add categories if software is a plugin or tags if a code snippet
 	if ( $post_type === 'plugin' ) {
 		$post_info['post_category'] = $category_ids;
 	}
@@ -433,11 +550,19 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	add_post_meta( $post_id, 'slug', $slug );
+	# Add slug as both postmeta and custom taxonomy
+	add_post_meta( $post_id, 'slug', $slug );	
+	wp_set_object_terms( $post_id, [sanitize_title( $slug )], $slug_taxonomy );
+
 	add_post_meta( $post_id, 'current_version', $current_version );
 	add_post_meta( $post_id, 'git_provider', $git_provider );
 	add_post_meta( $post_id, 'cp_version', $cp_version );
 	add_post_meta( $post_id, 'download_link', $download_link );
+	add_post_meta( $post_id, 'update_uri', $update_uri );
+
+	if ( ! empty( $headers ) && ! empty( $headers['RequiresPHP'] ) ) {
+		add_post_meta( $post_id, 'requires_php', $headers['RequiresPHP'] );
+	}
 
 	# Redirect to post where published
 	wp_safe_redirect( esc_url_raw( get_permalink( $post_id ) ) );
