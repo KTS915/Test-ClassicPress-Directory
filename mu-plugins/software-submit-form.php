@@ -112,6 +112,9 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'no-tags' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must specify at least one tag for your code snippet!', 'classicpress' ) . '</p></div>';
 			}
+			elseif ( $_GET['notification'] === 'too-many-tags' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'You cannot specify more than three tags for your code snippet!', 'classicpress' ) . '</p></div>';
+			}
 			elseif ( $_GET['notification'] === 'no-current-version' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must specify the current version of your software!', 'classicpress' ) . '</p></div>';
 			}
