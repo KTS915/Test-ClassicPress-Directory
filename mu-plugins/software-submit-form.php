@@ -393,7 +393,7 @@ function kts_software_submit_form_redirect() {
 	$github_username = get_user_meta( $user_id, 'github_username', true );	
 	$update_uri = 'https://github.com/' . $github_username . '/' . str_replace( ' ', '-', $title ) . '/releases/download/';
 	
-	if ( strpos( $download_link, $update_uri ) !== 0 ) {
+	if ( stripos( $download_link, $update_uri ) !== 0 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
 		exit;
 	}
