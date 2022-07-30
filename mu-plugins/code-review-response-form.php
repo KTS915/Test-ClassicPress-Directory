@@ -246,8 +246,9 @@ function kts_review_response_form_redirect() {
 		exit;
 	}
 
-	# Check that the download link points to GitHub
-	if ( strpos( $_POST['download_link'], 'https://github.com/' ) !== 0 ) {
+	# Check that the download link corresponds with the Update URI 
+	$update_uri = get_post_meta( $software_id, 'update_uri', true );
+	if ( stripos( $_POST['download_link'], $update_uri ) !== 0 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
 		exit;
 	}
@@ -281,7 +282,7 @@ function kts_review_response_form_redirect() {
 		'comment_approved'	=> 1,
 		'comment_content'	=> $comments,
 		'comment_post_ID'	=> end( $review_ids ), // get latest associated review
-		'user_id'		=> $user_id,
+		'user_id'			=> $user_id,
 	);
 	$comment_id = wp_insert_comment( $commentdata );
 
