@@ -391,7 +391,7 @@ function kts_software_submit_form_redirect() {
 	# Check that the download link points to GitHub URI associated with GitHub Username and name of software
 	$user_id = get_current_user_id();
 	$github_username = get_user_meta( $user_id, 'github_username', true );	
-	$update_uri = 'https://github.com/' . $github_username . '/' . str_replace( ' ', '-', $title ) . '/releases/download/';
+	$update_uri = esc_url_raw( 'https://github.com/' . $github_username . '/' . str_replace( ' ', '-', $title ) . '/releases/download/' );
 	
 	if ( stripos( $download_link, $update_uri ) !== 0 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
