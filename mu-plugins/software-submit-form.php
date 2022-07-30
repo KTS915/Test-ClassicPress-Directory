@@ -394,12 +394,31 @@ function kts_software_submit_form_redirect() {
 	$update_uri = $github_api . '/releases';
 
 	# Find default Github branch for software
-	$github_info = wp_remote_get( $github_api );
+	# Make GET request to GitHub API to retrieve latest software download link
+	# To use a GitHub API token put define('GITHUB_API_TOKEN', 'YOURTOKENVALUE'); in wp-config.php
+	# To create a token, go to https://github.com/settings/tokens and generate a new token.
+	# When generating the new token don't select any scope.
+	if ( defined ( 'GITHUB_API_TOKEN' ) ) {
+		$auth = [
+			'headers' => [
+				'Authorization' => 'token ' . GITHUB_API_TOKEN,
+			],
+		];
+	} else {
+		$auth = [];
+	}
+
+	$github_info = wp_remote_get( $github_api, $auth );
 	if ( is_wp_error( $github_info ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
 		exit;
 	}
 	$data = json_decode( wp_remote_retrieve_body( $github_info ) );
+	if ( isset ( $data->message ) ) {
+		trigger_error ( 'Something went wrong with GitHub API: ' . esc_html( $result->message ) );
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
+		exit;
+	}
 	$default_branch = $data->default_branch;
 
 	# Get software description
