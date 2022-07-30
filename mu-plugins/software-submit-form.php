@@ -22,6 +22,7 @@ function kts_get_plugin_data( $file_data ) {
 		'Network'		=> 'Network',
 		'RequiresWP'	=> 'Requires at least',
 		'RequiresPHP'	=> 'Requires PHP',
+		'RequiresCP'	=> 'Requires CP', // lowest compatible version of ClassicPress
 	);
 	$plugin_data = kts_get_file_data( $file_data, $default_headers );
 	$plugin_data['Network'] = ( 'true' == strtolower( $plugin_data['Network'] ) );
@@ -102,9 +103,6 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'wrong-excerpt' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'The brief description of your software is longer than 100 characters!', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'no-description' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a description of your software!', 'classicpress' ) . '</p></div>';
-			}
 			elseif ( $_GET['notification'] === 'no-categories' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must specify at least one category for your plugin!', 'classicpress' ) . '</p></div>';
 			}
@@ -123,12 +121,6 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'wrong-git-provider' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'The Git provider you have specified is not recognized!', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'no-cp-version' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'You must specify the minimum version of ClassicPress that your software works with!', 'classicpress' ) . '</p></div>';
-			}
-			elseif ( $_GET['notification'] === 'wrong-cp-version' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'The minimum version of ClassicPress you have specified is unrecognized!', 'classicpress' ) . '</p></div>';
-			}
 			elseif ( $_GET['notification'] === 'no-download-link' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a download link!', 'classicpress' ) . '</p></div>';
 			}
@@ -136,7 +128,10 @@ function kts_render_software_submit_form() {
 				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a valid URL for the download link!', 'classicpress' ) . '</p></div>';
 			}
 			elseif ( $_GET['notification'] === 'invalid-github' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a URL for a GitHub repository!', 'classicpress' ) . '</p></div>';
+				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a download link to a GitHub repository that is associated with the GitHub Username you have registered with the ClassicPress Directory.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'github-repo-error' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem accessing the associated GitHub repository.', 'classicpress' ) . '</p></div>';
 			}
 			elseif ( $_GET['notification'] === 'temp-file-error' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem creating a temporary file.', 'classicpress' ) . '</p></div>';
@@ -150,11 +145,23 @@ function kts_render_software_submit_form() {
 			elseif ( $_GET['notification'] === 'duplicate-plugin-slug' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'Your plugin\'s slug is already taken. Please rebuild your zip file so that the top level folder within it has a unique name.', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'github-repo-error' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem accessing the associated GitHub repository.', 'classicpress' ) . '</p></div>';
+			elseif ( $_GET['notification'] === 'no-headers' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'Your software is lacking required headers.', 'classicpress' ) . '</p></div>';
 			}
-			elseif ( $_GET['notification'] === 'github-readme-error' ) {
-				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem finding the software\'s README.md file.', 'classicpress' ) . '</p></div>';
+			elseif ( $_GET['notification'] === 'no-requires-php' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'You need to specify in a header called "Requires PHP" the minimum version of PHP compatible with your software.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'wrong-php-version' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'The minimum version of PHP you have specified is unrecognized!', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'no-requires-cp' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'You need to specify in a header called "Requires CP" the minimum version of ClassicPress compatible with your software.', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'wrong-cp-version' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'The minimum version of ClassicPress you have specified is unrecognized!', 'classicpress' ) . '</p></div>';
+			}
+			elseif ( $_GET['notification'] === 'no-description' ) {
+				echo '<div class="error-message" role="alert"><p>' . __( 'You must provide a description of your software in either a README.md file or a header called "Description".', 'classicpress' ) . '</p></div>';
 			}
 			elseif ( $_GET['notification'] === 'not-sent' ) {
 				echo '<div class="error-message" role="alert"><p>' . __( 'There was a problem submitting the form. Your message has not been sent.', 'classicpress' ) . '</p></div>';
@@ -208,13 +215,10 @@ function kts_render_software_submit_form() {
 			</fieldset>
 
 			<div id="tags-div" hidden>
-				<label for="tags"><?php _e( 'Tags (you may specify up to three, separated by commas)', 'classicpress' ); ?></label>
+				<label for="tags"><?php _e( 'Tags (you must specify at least one, and up to three, separated by commas)', 'classicpress' ); ?></label>
 				<span id="max" class="error-message" role="alert" hidden><?php _e( 'You have specified more than three tags!', 'classicpress' ); ?></span>
 				<input id="tags" name="tags" type="text" disabled>
 			</div>
-
-			<label for="cp_version"><?php _e( 'Minimum Version of ClassicPress', 'classicpress' ); ?></label>
-			<input id="cp_version" name="cp_version" type="number" step="0.1" min="1.0" required>
 
 			<fieldset>
 				<legend><?php _e( 'Select Git Provider (currently only GitHub)', 'classicpress' ); ?></legend>
@@ -355,18 +359,6 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	# Check that minimum version of CP has been provided
-	if ( empty( $_POST['cp_version'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-cp-version' ) );
-		exit;
-	}
-
-	# Check that minimum version of CP is a float
-	if ( filter_var( $_POST['cp_version'], FILTER_VALIDATE_FLOAT ) === false ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=wrong-cp-version' ) );
-		exit;
-	}
-
 	# Check that URL to download software has been provided
 	if ( empty( $_POST['download_link'] ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-download_link' ) );
@@ -472,8 +464,10 @@ function kts_software_submit_form_redirect() {
 	$zip->open( $file['tmp_name'] );
 	$slug = strstr( $zip->getNameIndex(0), '/', true );
 
-	# Check that slug is unique
+	# Check that slug is unique, holding errors until temporary file deleted
 	$slug_taxonomy = '';
+	$slug_problem = '';
+
 	if ( $post_type === 'theme' ) { // Themes
 		$headers = [];
 		$slugs = get_terms( array(
@@ -482,8 +476,7 @@ function kts_software_submit_form_redirect() {
 			'fields' => 'names',
 		) );
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
-			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-theme-slug' ) );
-			exit;
+			$slug_problem = 'theme';
 		}
 		$slug_taxonomy = 'theme_slugs';
 	}
@@ -495,8 +488,7 @@ function kts_software_submit_form_redirect() {
 			'fields' => 'names',
 		) );
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
-			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-snippet-slug' ) );
-			exit;
+			$slug_problem = 'snippet';
 		}
 		$slug_taxonomy = 'snippet_slugs';
 	}
@@ -507,8 +499,7 @@ function kts_software_submit_form_redirect() {
 			'fields' => 'names',
 		) );
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
-			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-plugin-slug' ) );
-			exit;
+			$slug_problem = 'plugin';
 		}
 		$slug_taxonomy = 'plugin_slugs';
 
@@ -540,14 +531,61 @@ function kts_software_submit_form_redirect() {
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
 
+	# Bail and redirect if slug provided is already taken
+	if ( ! empty( $slug_problem ) ) {
+		if ( $slug_problem === 'theme' ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-theme-slug' ) );
+			exit;
+		}
+		if ( $slug_problem === 'snippet' ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-snippet-slug' ) );
+			exit;
+		}
+		if ( $slug_problem === 'plugin' ) {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=duplicate-plugin-slug' ) );
+			exit;
+		}
+	}
+
+	# Bail and redirect if lacking required headers
+	if ( ! empty( $headers ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-headers' ) );
+		exit;
+	}
+
+	if ( empty( $headers['RequiresPHP'] ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-requires-php' ) );
+		exit;
+	}
+
+	# Check that minimum version of PHP is a float
+	if ( filter_var( $headers['RequiresPHP'], FILTER_VALIDATE_FLOAT ) === false ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=wrong-php-version' ) );
+		exit;
+	}
+
+	if ( empty( $headers['RequiresCP'] ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-requires-cp' ) );
+		exit;
+	}
+
+	# Check that minimum version of CP is a float
+	if ( filter_var( $headers['RequiresCP'], FILTER_VALIDATE_FLOAT ) === false ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=wrong-cp-version' ) );
+		exit;
+	}
+
+	if ( empty( $description ) && empty( $headers['Description'] ) ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
+		exit;
+	}
+	
+
 	# Get brief description of software
 	$excerpt = sanitize_text_field( wp_unslash( $_POST['excerpt'] ) );
 
 	# Get git provider
 	$git_provider = sanitize_text_field( wp_unslash( $_POST['git_provider'] ) );
-
-	# Get minimum version of CP
-	$cp_version = sanitize_text_field( wp_unslash( $_POST['cp_version'] ) );
 
 	# Submit form as a post type
 	$post_info = array(
@@ -583,13 +621,10 @@ function kts_software_submit_form_redirect() {
 
 	add_post_meta( $post_id, 'current_version', $current_version );
 	add_post_meta( $post_id, 'git_provider', $git_provider );
-	add_post_meta( $post_id, 'cp_version', $cp_version );
 	add_post_meta( $post_id, 'download_link', $download_link );
 	add_post_meta( $post_id, 'update_uri', $update_uri );
-
-	if ( ! empty( $headers ) && ! empty( $headers['RequiresPHP'] ) ) {
-		add_post_meta( $post_id, 'requires_php', $headers['RequiresPHP'] );
-	}
+	add_post_meta( $post_id, 'requires_php', $headers['RequiresPHP'] );
+	add_post_meta( $post_id, 'cp_version', $headers['RequiresCP'] );
 
 	# Redirect to post where published
 	wp_safe_redirect( esc_url_raw( get_permalink( $post_id ) ) );
