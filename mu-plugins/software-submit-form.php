@@ -379,19 +379,28 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	# Check that the download link points to GitHub
-	if ( strpos( $_POST['download_link'], 'https://github.com/' ) !== 0 ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
-		exit;
+	# Prevent form title being all upper case
+	$title = sanitize_text_field( wp_unslash( $_POST['name'] ) );
+	if ( strtoupper( $title ) === $title ) { // all upper case
+		$title = ucwords( strtolower( $title ) ); // convert to title case
 	}
 
 	# Get download link
 	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
 
+	# Check that the download link points to GitHub URI associated with GitHub Username and name of software
+	$user_id = get_current_user_id();
+	$github_username = get_user_meta( $user_id, 'github_username', true );	
+	$update_uri = 'https://github.com/' . $github_username . '/' . str_replace( ' ', '-', $title ) . '/releases/download/';
+	
+	if ( strpos( $download_link, $update_uri ) !== 0 ) {
+		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
+		exit;
+	}
+
 	# Access GitHub repo and get Update URI
 	$github_api = str_replace( 'https://github.com', 'https://api.github.com/repos', $download_link );
 	$github_api = substr( $github_api, 0, strpos( $github_api, '/releases' ) );
-	$update_uri = $github_api . '/releases';
 
 	# Find default Github branch for software
 	# Make GET request to GitHub API to retrieve latest software download link
@@ -415,7 +424,7 @@ function kts_software_submit_form_redirect() {
 	}
 	$data = json_decode( wp_remote_retrieve_body( $github_info ) );
 	if ( isset ( $data->message ) ) {
-		trigger_error ( 'Something went wrong with GitHub API: ' . esc_html( $result->message ) );
+		trigger_error( 'Something went wrong with GitHub API: ' . esc_html( $result->message ) );
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
 		exit;
 	}
@@ -513,6 +522,7 @@ function kts_software_submit_form_redirect() {
 			# Parse other files for headers
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+
 					# Only check PHP and don't recourse into subdirs
 					continue;
 				}
@@ -530,12 +540,6 @@ function kts_software_submit_form_redirect() {
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
 
-	# Prevent form title being all upper case
-	$title = sanitize_text_field( wp_unslash( $_POST['name'] ) );
-	if ( strtoupper( $title ) === $title ) { // all upper case
-		$title = ucwords( strtolower( $title ) ); // convert to title case
-	}
-
 	# Get brief description of software
 	$excerpt = sanitize_text_field( wp_unslash( $_POST['excerpt'] ) );
 
@@ -552,7 +556,7 @@ function kts_software_submit_form_redirect() {
 		'post_content'	=> ( ! empty( $description ) ) ? $description : wp_kses_post( $headers['Description'] ),
 		'post_type'		=> $post_type,
 		'post_status'	=> 'draft',
-		'post_author'	=> get_current_user_id(),
+		'post_author'	=> $user_id,
 		'comment_status'=> 'closed',
 	);
 
