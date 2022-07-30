@@ -140,7 +140,7 @@ function kts_register_custom_fields( $user_id ) {
 			'github_usernames',
 			array(
 				'fields' => 'ids',
-			)
+			),
 		);
 		if ( ! empty( $current_gu_tax_term_ids ) ) {
 			wp_delete_term( $current_gu_tax_term_ids[0], 'github_usernames' );
@@ -154,9 +154,11 @@ function kts_register_custom_fields( $user_id ) {
 	$last_name = sanitize_text_field( wp_unslash( $_POST['last_name'] ) );
 	update_user_meta( $user_id, 'last_name', $last_name );
 
-	# Add both meta and custom taxonomy for GitHub Username
-	update_user_meta( $user_id, 'github_username', $github_username );
-	wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
+	# On registration only, add both meta and custom taxonomy for GitHub Username
+	if ( empty( $current_gu ) ) {
+		add_user_meta( $user_id, 'github_username', $github_username );
+		wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
+	}
 }
 add_action( 'user_register', 'kts_register_custom_fields' );
 add_action( 'edit_user_created_user', 'kts_register_custom_fields' ); // backend
@@ -165,6 +167,7 @@ add_action( 'edit_user_profile_update', 'kts_register_custom_fields' );
 
 
 /* BACK-END USER REGISTRATION CUSTOM FIELDS */
+# Do not provide users with a means for changing their GitHub Username
 function kts_user_admin_register_custom_fields( $user ) { ?>
 	
 	<table class="form-table">
@@ -174,7 +177,7 @@ function kts_user_admin_register_custom_fields( $user ) { ?>
 			</th>
 
 			<td>
-				<input id="github_username" name="github_username" type="text" class="regular-text" value="<?php echo esc_attr( get_user_meta( $user->ID, 'github_username', true ) ); ?>" required>
+				<input id="github_username" name="github_username" type="text" class="regular-text" value="<?php echo esc_attr( get_user_meta( $user->ID, 'github_username', true ) ); ?>" readonly>
 				<br>
 			</td>
 		</tr>
@@ -197,36 +200,6 @@ function kts_user_profile_update_errors( $errors, $update, $user ) {
 
 	if ( empty( $_POST['last_name'] ) ) {
 		$errors->add( 'last_name_error', __( '<strong>ERROR</strong>: Please enter a last name.', 'classicpress' ) );
-	}
-
-	# Require Github username
-	if ( empty( $_POST['github_username'] ) ) {
-		$errors->add( 'github_username_error', __( '<strong>ERROR</strong>: Please enter your GitHub username.', 'classicpress' ) );
-	}
-	else {
-		# Prevent someone registering with the Directory with a GitHub Username that's already been claimed
-		$github_username = sanitize_text_field( wp_unslash( $_POST['github_username'] ) );
-		$current_gu = get_user_meta( $user->ID, 'github_username', true );
-
-		if ( $github_username !== $current_gu ) {			
-			$github_usernames = get_terms( array(
-				'taxonomy' => 'github_usernames',
-				'hide_empty' => false,
-				'fields' => 'names',
-			) );
-
-			if ( in_array( sanitize_title( $github_username ), $github_usernames ) ) {
-				$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: This GitHub username has already been registered with the ClassicPress Directory.', 'classicpress' ) );
-			}
-		}
-		
-		# Check if there's a GitHub repo associated with this username
-		$github_api = 'https://api.github.com/users/' . $github_username;
-		$github_repo = wp_remote_get( $github_api );
-		$data = json_decode( wp_remote_retrieve_body( $github_repo ) );
-		if ( empty( $data ) || empty( $data->repos_url ) ) {
-			$errors->add( 'no_repo_error', __( '<strong>ERROR</strong>: There is no GitHub repository associated with this GitHub username.', 'classicpress' ) );
-		}
 	}
 }
 add_action( 'user_profile_update_errors', 'kts_user_profile_update_errors', 10, 3 );
