@@ -398,7 +398,7 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
-	# Access GitHub repo and get Update URI
+	# Access GitHub repo
 	$github_api = str_replace( 'https://github.com', 'https://api.github.com/repos', $download_link );
 	$github_api = substr( $github_api, 0, strpos( $github_api, '/releases' ) );
 
