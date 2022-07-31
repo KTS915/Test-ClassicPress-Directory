@@ -473,16 +473,48 @@ function kts_software_submit_form_redirect() {
 	$slug_problem = '';
 
 	if ( $post_type === 'theme' ) { // Themes
-		$headers = [];
 		$slugs = get_terms( array(
 			'taxonomy' => 'theme_slugs',
 			'hide_empty' => false,
 			'fields' => 'names',
 		) );
+
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
 			$slug_problem = 'theme';
 		}
+
 		$slug_taxonomy = 'theme_slugs';
+
+		# Don't bother with further processing if there's a slug problem
+		if ( empty( $slug_problem ) ) {
+
+			# Get headers
+			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_NOCASE );
+
+			$headers = kts_get_plugin_data( $style_txt );
+		
+			# If still no headers or no description from style.css file above, try readme.txt file
+			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			
+				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+
+				if ( empty( $headers['RequiresPHP'] ) ) {
+					$headers = kts_get_plugin_data( $readme_txt );
+				}
+
+				if ( empty( $description ) ) {
+					$parsedown_txt = new Parsedown();
+					$parsedown_txt->setSafeMode(true);
+
+					$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
+					$description = wp_kses_post( $description );
+
+					//TO DO: parse description headings marked with ==
+				}
+			}
+		}
 	}
 
 	elseif ( $post_type === 'snippet' ) { // Snippets
@@ -492,31 +524,17 @@ function kts_software_submit_form_redirect() {
 			'hide_empty' => false,
 			'fields' => 'names',
 		) );
+
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
 			$slug_problem = 'snippet';
 		}
+
 		$slug_taxonomy = 'snippet_slugs';
-	}
 
-	else { // Plugins
-		$slugs = get_terms( array(
-			'taxonomy' => 'plugin_slugs',
-			'hide_empty' => false,
-			'fields' => 'names',
-		) );
-		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
-			$slug_problem = 'plugin';
-		}
-		$slug_taxonomy = 'plugin_slugs';
+		# Don't bother with further processing if there's a slug problem
+		if ( empty( $slug_problem ) ) {
 
-		# Check if most common location for main file contain headers
-		$guessed_main_file = $slug . '/' . $slug . '.php';
-		$file_data = $zip->getFromName( $guessed_main_file, 8192 );
-		$headers = kts_get_plugin_data( $file_data );
-
-		if ( empty( $headers['RequiresPHP'] ) ) {
-
-			# Parse other files for headers
+			# Get headers
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
 
@@ -526,37 +544,82 @@ function kts_software_submit_form_redirect() {
 				$file_data = $zip->getFromIndex( $i, 8192 );
 				$headers = kts_get_plugin_data( $file_data );
 				if ( ! empty( $headers['RequiresPHP'] ) ) {
+
 					# We have the headers
 					$main_plugin_file = $zip->getNameIndex( $i );
 					break;
 				}
 			}
 		}
-		
-		# If still no headers or no description from README.md file above, try readme.txt file
-		if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
-			
-			$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+	}
+
+	else { // Plugins
+		$slugs = get_terms( array(
+			'taxonomy' => 'plugin_slugs',
+			'hide_empty' => false,
+			'fields' => 'names',
+		) );
+
+		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
+			$slug_problem = 'plugin';
+		}
+
+		$slug_taxonomy = 'plugin_slugs';
+
+		# Don't bother with further processing if there's a slug problem
+		if ( empty( $slug_problem ) ) {
+
+			# Check if most common location for main file contain headers
+			$guessed_main_file = $slug . '/' . $slug . '.php';
+			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
+			$headers = kts_get_plugin_data( $file_data );
 
 			if ( empty( $headers['RequiresPHP'] ) ) {
-				$headers = kts_get_plugin_data( $readme_txt );
+
+				# Parse other files for headers
+				for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+					if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+
+						# Only check PHP and don't recourse into subdirs
+						continue;
+					}
+					$file_data = $zip->getFromIndex( $i, 8192 );
+					$headers = kts_get_plugin_data( $file_data );
+					if ( ! empty( $headers['RequiresPHP'] ) ) {
+
+						# We have the headers
+						$main_plugin_file = $zip->getNameIndex( $i );
+						break;
+					}
+				}
 			}
-
-			if ( empty( $description ) ) {
-				$parsedown_txt = new Parsedown();
-				$parsedown_txt->setSafeMode(true);
-
-				$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
-				$description = wp_kses_post( $description );
+		
+			# If still no headers or no description from README.md file above, try readme.txt file
+			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
 			
-				//TO DO: parse description headings marked with ==
+				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+
+				if ( empty( $headers['RequiresPHP'] ) ) {
+					$headers = kts_get_plugin_data( $readme_txt );
+				}
+
+				if ( empty( $description ) ) {
+					$parsedown_txt = new Parsedown();
+					$parsedown_txt->setSafeMode(true);
+
+					$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
+					$description = wp_kses_post( $description );
+
+					//TO DO: parse description headings marked with ==
+				}
 			}
 		}
 	}
 
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
+
 
 	# Bail and redirect if slug provided is already taken
 	if ( ! empty( $slug_problem ) ) {
