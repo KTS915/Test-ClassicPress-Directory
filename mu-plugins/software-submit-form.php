@@ -40,6 +40,7 @@ function kts_get_file_data( $file_data, $all_headers ) {
 	return $all_headers;
 }
 
+
 function kts_render_software_submit_form() {
 	$user_id = get_current_user_id();
 	$two_fa = kts_2fa_enabled( $user_id );
@@ -433,9 +434,9 @@ function kts_software_submit_form_redirect() {
 	$readme = wp_remote_get( $readme_url );
 
 	if ( ! empty( $readme ) ) {
-		$parsedown = new Parsedown();
-		$parsedown->setSafeMode(true);
-		$description = $parsedown->text( $readme['body'] );
+		$parsedown_md = new Parsedown();
+		$parsedown_md->setSafeMode(true);
+		$description = $parsedown_md->text( $readme['body'] );
 		$description = wp_kses_post( $description );
 	}
 
@@ -483,7 +484,8 @@ function kts_software_submit_form_redirect() {
 		}
 		$slug_taxonomy = 'theme_slugs';
 	}
-	elseif( $post_type === 'snippet' ) { // Snippets
+
+	elseif ( $post_type === 'snippet' ) { // Snippets
 		$headers = [];
 		$slugs = get_terms( array(
 			'taxonomy' => 'snippet_slugs',
@@ -495,6 +497,7 @@ function kts_software_submit_form_redirect() {
 		}
 		$slug_taxonomy = 'snippet_slugs';
 	}
+
 	else { // Plugins
 		$slugs = get_terms( array(
 			'taxonomy' => 'plugin_slugs',
@@ -529,6 +532,27 @@ function kts_software_submit_form_redirect() {
 				}
 			}
 		}
+		
+		# If still no headers or no description from README.md file above, try readme.txt file
+		if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			
+			$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+
+			if ( empty( $headers['RequiresPHP'] ) ) {
+				$headers = kts_get_plugin_data( $readme_txt );
+			}
+
+			if ( empty( $description ) ) {
+				$parsedown_txt = new Parsedown();
+				$parsedown_txt->setSafeMode(true);
+
+				$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
+				$description = wp_kses_post( $description );
+			
+				//TO DO: parse description headings marked with ==
+			}
+		}
 	}
 
 	# Delete temporary file
@@ -551,7 +575,7 @@ function kts_software_submit_form_redirect() {
 	}
 
 	# Bail and redirect if lacking required headers
-	if ( ! empty( $headers ) ) {
+	if ( empty( $headers ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-headers' ) );
 		exit;
 	}
@@ -583,7 +607,6 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 	
-
 	# Get brief description of software
 	$excerpt = sanitize_text_field( wp_unslash( $_POST['excerpt'] ) );
 
