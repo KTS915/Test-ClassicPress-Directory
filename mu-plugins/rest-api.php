@@ -46,6 +46,24 @@ function kts_register_meta_with_rest_api() {
 	);
 	register_meta( 'post', 'download_link', $plugin_args4 );
 
+	$plugin_args5 = array(
+		'type'			=> 'string',
+		'description'	=> 'Update URI',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'update_uri', $plugin_args5 );
+
+	$plugin_args6 = array(
+		'type'			=> 'string',
+		'description'	=> 'Minimum Required Version of PHP',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'requires_php', $plugin_args6 );
+
 	$theme_args1 = array(
 		'type'			=> 'string',
 		'description'	=> 'Current Version of Software',
@@ -82,6 +100,24 @@ function kts_register_meta_with_rest_api() {
 	);
 	register_meta( 'post', 'download_link', $theme_args4 );
 
+	$theme_args5 = array(
+		'type'			=> 'string',
+		'description'	=> 'Update URI',
+		'single'		=> true,
+		'object_subtype'=> 'theme',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'update_uri', $theme_args5 );
+
+	$theme_args6 = array(
+		'type'			=> 'string',
+		'description'	=> 'Minimum Required Version of PHP',
+		'single'		=> true,
+		'object_subtype'=> 'theme',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'requires_php', $theme_args6 );
+
 	$snippet_args1 = array(
 		'type'			=> 'string',
 		'description'	=> 'Current Version of Software',
@@ -117,6 +153,24 @@ function kts_register_meta_with_rest_api() {
 		'show_in_rest'	=> true,
 	);
 	register_meta( 'post', 'download_link', $snippet_args4 );
+
+	$snippet_args5 = array(
+		'type'			=> 'string',
+		'description'	=> 'Update URI',
+		'single'		=> true,
+		'object_subtype'=> 'snippet',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'update_uri', $snippet_args5 );
+
+	$snippet_args6 = array(
+		'type'			=> 'string',
+		'description'	=> 'Minimum Required Version of PHP',
+		'single'		=> true,
+		'object_subtype'=> 'snippet',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'requires_php', $snippet_args6 );
 }
 add_action( 'init', 'kts_register_meta_with_rest_api' );
 
