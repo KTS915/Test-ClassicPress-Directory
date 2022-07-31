@@ -518,7 +518,6 @@ function kts_software_submit_form_redirect() {
 	}
 
 	elseif ( $post_type === 'snippet' ) { // Snippets
-		$headers = [];
 		$slugs = get_terms( array(
 			'taxonomy' => 'snippet_slugs',
 			'hide_empty' => false,
