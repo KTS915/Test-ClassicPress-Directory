@@ -62,6 +62,18 @@ get_header();
 
 		endif;
 		?>
+		
+			<div class="dialog-container" id="my-dialog" aria-labelledby="my-dialog-title" aria-describedby="my-dialog-description" aria-hidden="true">
+				<div class="dialog-overlay" data-a11y-dialog-hide></div>
+				<div class="dialog-content" role="document">
+					<button id="top-close" data-a11y-dialog-hide class="dialog-close" aria-label="Close this dialog window">&times;</button>
+
+					<h2 id="my-dialog-title"></h2>
+
+					<div id="my-dialog-description"></div>
+					<button id="bottom-close" data-a11y-dialog-hide aria-label="Close this dialog window">Close</button>
+				</div>
+			</div>
 
 		</main><!-- #main -->
 	</div><!-- #primary -->
