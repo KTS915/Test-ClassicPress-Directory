@@ -132,6 +132,10 @@ function kts_list_developers() {
 
 		if ( ! empty( $users ) ) {
 			foreach ( $users as $user ) {
+				if ( count_user_posts( $user->ID, [ 'plugin', 'theme', 'snippet' ], true ) === '0' ) {
+					continue;
+				}
+
 				$initial = $user->display_name[0]; // first letter
 				if ( $initial !== $previous_initial ) {
 					$developers .= '</ul><ul id="letter-' . strtolower( $initial ) . '-panel" class="developer-panel" role="tabpanel">';
