@@ -113,11 +113,13 @@ function bedrock_scripts() {
 	}
 
 	if ( is_author() ) {
+		wp_enqueue_style( 'modal-css', get_template_directory_uri() . '/css/modal.css' );
 		wp_enqueue_script( 'tabs-js', get_template_directory_uri() . '/js/tabs.js', null, null, true );
 		wp_enqueue_script( 'archive-js', get_template_directory_uri() . '/js/archive.js', null, null, true );
 	}
 
 	elseif ( is_archive() ) {
+		wp_enqueue_style( 'modal-css', get_template_directory_uri() . '/css/modal.css' );
 		wp_enqueue_script( 'archive-js', get_template_directory_uri() . '/js/archive.js', null, null, true );
 	}
 
