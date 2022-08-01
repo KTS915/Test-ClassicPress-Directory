@@ -279,7 +279,7 @@ function kts_software_submit_form_redirect() {
 
 	# Get correct type of software
 	$post_type = sanitize_text_field( wp_unslash( $_POST['software_type'] ) );
-
+/*
 	# Check that the type of software has been specified
 	if ( empty( $post_type ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-software-type' ) );
@@ -381,10 +381,10 @@ function kts_software_submit_form_redirect() {
 	if ( strtoupper( $title ) === $title ) { // all upper case
 		$title = ucwords( strtolower( $title ) ); // convert to title case
 	}
-
+*/
 	# Get download link
 	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
-
+/*
 	# Check that the download link points to GitHub URI associated with GitHub Username and name of software
 	$user_id = get_current_user_id();
 	$github_username = get_user_meta( $user_id, 'github_username', true );	
@@ -444,7 +444,7 @@ function kts_software_submit_form_redirect() {
 	# Get current version of software
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
 	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
-
+*/
 	# Enable the download_url() and wp_handle_sideload() functions
 	require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
@@ -509,10 +509,10 @@ function kts_software_submit_form_redirect() {
 					$parsedown_txt = new Parsedown();
 					$parsedown_txt->setSafeMode(true);
 
-					$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
-					$description = wp_kses_post( $description );
+					$readme_txt = str_replace( ['====', '===', '=='], ['####', '###', '##'], $readme_txt );
 
-					//TO DO: parse description headings marked with ==
+					$description = $parsedown_txt->text( str_replace( '## Description ##', '', strstr( $readme_txt, '## Description ##' ) ) );
+					$description = wp_kses_post( $description );
 				}
 			}
 		}
@@ -559,11 +559,11 @@ function kts_software_submit_form_redirect() {
 			'hide_empty' => false,
 			'fields' => 'names',
 		) );
-
+/*
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
 			$slug_problem = 'plugin';
 		}
-
+*/
 		$slug_taxonomy = 'plugin_slugs';
 
 		# Don't bother with further processing if there's a slug problem
@@ -608,10 +608,10 @@ function kts_software_submit_form_redirect() {
 					$parsedown_txt = new Parsedown();
 					$parsedown_txt->setSafeMode(true);
 
-					$description = str_replace( '== Description ==', '', strstr( $parsedown_txt->text( $readme_txt ), '== Description ==' ) );
-					$description = wp_kses_post( $description );
+					$readme_txt = str_replace( ['====', '===', '=='], ['####', '###', '##'], $readme_txt );
 
-					//TO DO: parse description headings marked with ==
+					$description = $parsedown_txt->text( str_replace( '## Description ##', '', strstr( $readme_txt, '## Description ##' ) ) );
+					$description = wp_kses_post( $description );
 				}
 			}
 		}
