@@ -64,6 +64,15 @@ function kts_register_meta_with_rest_api() {
 	);
 	register_meta( 'post', 'requires_php', $plugin_args6 );
 
+	$plugin_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Plugin slug',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'slug', $plugin_args7 );
+
 	$theme_args1 = array(
 		'type'			=> 'string',
 		'description'	=> 'Current Version of Software',
@@ -118,6 +127,15 @@ function kts_register_meta_with_rest_api() {
 	);
 	register_meta( 'post', 'requires_php', $theme_args6 );
 
+	$theme_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Theme slug',
+		'single'		=> true,
+		'object_subtype'=> 'theme',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'slug', $theme_args7 );
+
 	$snippet_args1 = array(
 		'type'			=> 'string',
 		'description'	=> 'Current Version of Software',
@@ -171,6 +189,15 @@ function kts_register_meta_with_rest_api() {
 		'show_in_rest'	=> true,
 	);
 	register_meta( 'post', 'requires_php', $snippet_args6 );
+
+	$snippet_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Snippet slug',
+		'single'		=> true,
+		'object_subtype'=> 'snippet',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'slug', $snippet_args7 );
 }
 add_action( 'init', 'kts_register_meta_with_rest_api' );
 
