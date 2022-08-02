@@ -62,47 +62,17 @@ function kts_software_update_link_redirect() {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=nonce-wrong-' . $software_id ) );
 		exit;
 	}
+	#FROM HERE
+	$update = kts_maybe_update( $software_id );
 
-	# Construct the URL to the GitHub API
-	$download_link = get_post_meta( $software_id, 'download_link', true );
-	$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
-	$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
-	$github_url = $repo_url . 'releases/latest';
-
-	# Make GET request to GitHub API to retrieve latest software download link
-	# To use a GitHub API token put define('GITHUB_API_TOKEN', 'YOURTOKENVALUE'); in wp-config.php
-	# To create a token, go to https://github.com/settings/tokens and generate a new token.
-	# When generating the new token don't select any scope.
-	if ( defined ( 'GITHUB_API_TOKEN' ) ) {
-		$auth = [
-			'headers' => [
-				'Authorization' => 'token ' . GITHUB_API_TOKEN,
-			],
-		];
-	} else {
-		$auth = [];
-	}
-
-	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
-	if ( isset ( $result->message ) ) {
-		trigger_error ( 'Something went wrong with GitHub API on item ' . $software_id . ': ' . esc_html( $result->message ) );
+	if ( $update === false ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-api-wrong-' . $software_id ) );
 		exit;
 	}
 
-	$new_link = ( $result && $result->assets ) ? $result->assets[0]->browser_download_url : '';
-
-	# Check that URL to download software is to a later release	
-	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
-	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
-
-	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
-	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
-
-	# Update download link and current version if newer
-	if ( version_compare( $new_version, $orig_version ) === 1 ) {
-		update_post_meta( $software_id, 'download_link', $new_link );
-		update_post_meta( $software_id, 'current_version', $new_version );
+	if ( is_array( $update ) ) {
+		update_post_meta( $software_id, 'download_link', $update['download_link'] );
+		update_post_meta( $software_id, 'current_version', $update['current_version'] );
 	}
 
 	# Generate success message
@@ -112,10 +82,8 @@ function kts_software_update_link_redirect() {
 }
 add_action( 'template_redirect', 'kts_software_update_link_redirect' );
 
- 
 /* UPDATE DOWNLOAD LINKS VIA DAILY CRONJOB */
 function kts_cron_update_download_links() {
-
 	# Get all plugins, themes, and snippets
 	$args = array(
 		'numberposts'	=> -1,
@@ -123,56 +91,16 @@ function kts_cron_update_download_links() {
 		'post_status'	=> 'publish',
 	);
 	$posts = get_posts( $args );
-
 	foreach( $posts as $key => $post ) {
-
-		# Get software ID and construct the URL to the GitHub API
-		$download_link = get_post_meta( $post->ID, 'download_link', true );
-		$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
-		$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
-		$github_url = $repo_url . 'releases/latest';
-
-		# Make GET request to GitHub API to retrieve latest software download link
-		if ( defined ( 'GITHUB_API_TOKEN' ) ) {
-			$auth = [
-				'headers' => [
-					'Authorization' => 'token ' . GITHUB_API_TOKEN,
-				],
-			];
-		} else {
-			$auth = [];
-		}
-
-		$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
-		if ( isset ( $result->message ) ) {
-			trigger_error ( 'Something went wrong with GitHub API on item ' . $post->ID . ': ' . esc_html( $result->message ) );
+		$update = kts_maybe_update( $post->ID );
+		if ( $update === false || $update === true ) {
 			continue;
 		}
-
-		$new_link = '';
-		if ( ! empty( $result ) && ! empty( $result->assets ) ) {
-			$new_link = $result->assets[0]->browser_download_url;
-		}
-
-		if ( ! empty( $new_link ) ) {
-
-			# Check that URL to download software is to a later release	
-			preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
-			$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
-
-			preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
-			$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
-
-			# Update download link and current version if newer
-			if ( version_compare( $new_version, $orig_version ) === 1 ) {
-				update_post_meta( $post->ID, 'download_link', $new_link );
-				update_post_meta( $post->ID, 'current_version', $new_version );
-			}
-
-			# Break into groups of 10 to keep manageable
-			if ( $key > 0 && $key % 10 == 0 ) { // modulo operator
-				sleep( 5 ); // wait for 5 seconds
-			}
+		update_post_meta( $post->ID, 'download_link', $update['download_link'] );
+		update_post_meta( $post->ID, 'current_version', $update['current_version'] );
+		# Break into groups of 10 to keep manageable
+		if ( $key > 0 && $key % 10 == 0 ) { // modulo operator
+			sleep( 5 ); // wait for 5 seconds
 		}
 	}
 }
@@ -186,3 +114,69 @@ function kts_cp_directory_cronjobs() {
 	}
 }
 add_action( 'init', 'kts_cp_directory_cronjobs' );
+
+/**
+ * Get the latest version of a software from GitHub API
+ *
+ * To use a GitHub API token put define('GITHUB_API_TOKEN', 'YOURTOKENVALUE'); in wp-config.php
+ * To create a token, go to https://github.com/settings/tokens and generate a new token.
+ * When generating the new token don't select any scope.
+ *
+ * @param int $software_id ID of the custom post types.
+ *
+ * @return bool|array      An array containing updated data,
+ *                         true if there is no update,
+ *                         false if the check failed.
+ *
+ */
+function kts_maybe_update( $software_id ) {
+
+	# Construct the URL to the GitHub API
+	$download_link = get_post_meta( $software_id, 'download_link', true );
+	$tidy_url = preg_replace( '~releases\/[\s\S]+?\.zip~', '', $download_link );
+	$repo_url = str_replace( 'https://github.com/', 'https://api.github.com/repos/', $tidy_url );
+	$github_url = $repo_url . 'releases/latest';
+
+	# Make GET request to GitHub API to retrieve latest software download link
+	if ( defined ( 'GITHUB_API_TOKEN' ) ) {
+		$auth = [
+			'headers' => [
+				'Authorization' => 'token ' . GITHUB_API_TOKEN,
+			],
+		];
+	} else {
+		$auth = [];
+	}
+
+	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
+	if ( isset ( $result->message ) ) {
+		trigger_error ( 'Something went wrong with GitHub API on item ' . $software_id . ': ' . esc_html( $result->message ) );
+		return false;
+	}
+
+	$new_link = '';
+	if ( ! empty( $result ) && ! empty( $result->assets ) ) {
+		$new_link = $result->assets[0]->browser_download_url;
+	}
+
+	if ( empty( $new_link ) ) {
+		return false;
+	}
+
+	# Check that URL to download software is to a later release
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
+	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
+
+	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $new_link, $new_matches );
+	$new_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $new_matches[0] );
+
+	# Update download link and current version if newer
+	if ( version_compare( $new_version, $orig_version ) === 1 ) {
+		return array(
+			'download_link'   => $new_link,
+			'current_version' => $new_version,
+		);
+	}
+
+	return true;
+}
