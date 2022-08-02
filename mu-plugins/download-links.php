@@ -83,7 +83,7 @@ function kts_software_update_link_redirect() {
 add_action( 'template_redirect', 'kts_software_update_link_redirect' );
 
  
-/* UPDATE DOWNLOAD LINKS VIA DAILY CRONJOB */
+/* UPDATE DOWNLOAD LINKS VIA CRONJOB EVERY 10 MINUTES */
 function kts_cron_update_download_links() {
 
 	# Get all plugins, themes, and snippets
