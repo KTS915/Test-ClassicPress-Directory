@@ -62,7 +62,7 @@ function kts_software_update_link_redirect() {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=nonce-wrong-' . $software_id ) );
 		exit;
 	}
-	#FROM HERE
+
 	$update = kts_maybe_update( $software_id );
 
 	if ( $update === false ) {
