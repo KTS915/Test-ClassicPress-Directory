@@ -62,7 +62,7 @@ function kts_software_update_link_redirect() {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=nonce-wrong-' . $software_id ) );
 		exit;
 	}
-
+	
 	$update = kts_maybe_update( $software_id );
 
 	if ( $update === false ) {
@@ -82,35 +82,37 @@ function kts_software_update_link_redirect() {
 }
 add_action( 'template_redirect', 'kts_software_update_link_redirect' );
 
+ 
 /* UPDATE DOWNLOAD LINKS VIA DAILY CRONJOB */
 function kts_cron_update_download_links() {
+
 	# Get all plugins, themes, and snippets
 	$args = array(
-		'numberposts'	=> -1,
+		'numberposts'	=> 2,
 		'post_type'		=> array( 'plugin', 'theme', 'snippet' ),
 		'post_status'	=> 'publish',
+		'orderby'     	=> 'modified',
+		'order'       	=> 'ASC',
 	);
 	$posts = get_posts( $args );
+
 	foreach( $posts as $key => $post ) {
 		$update = kts_maybe_update( $post->ID );
 		if ( $update === false || $update === true ) {
 			continue;
 		}
+
 		update_post_meta( $post->ID, 'download_link', $update['download_link'] );
 		update_post_meta( $post->ID, 'current_version', $update['current_version'] );
-		# Break into groups of 10 to keep manageable
-		if ( $key > 0 && $key % 10 == 0 ) { // modulo operator
-			sleep( 5 ); // wait for 5 seconds
-		}
 	}
 }
-add_action( 'daily_cron_hook', 'kts_cron_update_download_links' );
+add_action( 'update_cron_hook', 'kts_cron_update_download_links' );
 
 
 /* CRONJOB SCHEDULE */
 function kts_cp_directory_cronjobs() {
-	if ( ! wp_next_scheduled( 'daily_cron_hook' ) ) {
-		wp_schedule_event( time(), 'daily', 'daily_cron_hook' );
+	if ( ! wp_next_scheduled( 'update_cron_hook' ) ) {
+		wp_schedule_event( time(), 10 * MINUTE_IN_SECONDS, 'update_cron_hook' );
 	}
 }
 add_action( 'init', 'kts_cp_directory_cronjobs' );
@@ -163,7 +165,7 @@ function kts_maybe_update( $software_id ) {
 		return false;
 	}
 
-	# Check that URL to download software is to a later release
+	# Check that URL to download software is to a later release	
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $orig_matches );
 	$orig_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $orig_matches[0] );
 
