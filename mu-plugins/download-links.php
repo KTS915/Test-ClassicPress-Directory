@@ -97,6 +97,7 @@ function kts_cron_update_download_links() {
 	$posts = get_posts( $args );
 
 	foreach( $posts as $key => $post ) {
+		wp_update_post( $post );
 		$update = kts_maybe_update( $post->ID );
 		if ( $update === false || $update === true ) {
 			continue;
@@ -110,9 +111,18 @@ add_action( 'update_cron_hook', 'kts_cron_update_download_links' );
 
 
 /* CRONJOB SCHEDULE */
+function kts_cron_add_ten_minutes( $schedules ) {
+   $schedules['ten_minutes'] = array(
+       'interval' => 10 * MINUTE_IN_SECONDS,
+       'display' => __( 'Every 10 minutes' )
+   );
+   return $schedules;
+}
+add_filter( 'cron_schedules', 'kts_cron_add_ten_minutes' );
+
 function kts_cp_directory_cronjobs() {
 	if ( ! wp_next_scheduled( 'update_cron_hook' ) ) {
-		wp_schedule_event( time(), 10 * MINUTE_IN_SECONDS, 'update_cron_hook' );
+		wp_schedule_event( time(), 'ten_minutes', 'update_cron_hook' );
 	}
 }
 add_action( 'init', 'kts_cp_directory_cronjobs' );
