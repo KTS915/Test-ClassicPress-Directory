@@ -97,6 +97,7 @@ function kts_cron_update_download_links() {
 	$posts = get_posts( $args );
 
 	foreach( $posts as $key => $post ) {
+		wp_update_post( $post );
 		$update = kts_maybe_update( $post->ID );
 		if ( $update === false || $update === true ) {
 			continue;
