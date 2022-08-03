@@ -165,6 +165,7 @@ function kts_purge_developers_cache( $user_id ) {
 }
 add_action( 'user_register', 'kts_purge_developers_cache' );
 add_action( 'delete_user', 'kts_purge_developers_cache' );
+add_action( 'profile_update', 'kts_purge_developers_cache' );
 
 function kts_purge_developers_cpt_cache( $post_id ) {
 
