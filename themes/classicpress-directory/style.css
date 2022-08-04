@@ -669,12 +669,9 @@ object {
 	margin-bottom: 1em;
 	border: 1px solid var(--hover-bg-color);
 	border-radius: 3px;
-	background: #e6e6e6;
+	background: #fff !important;
 	font-size: 0.75rem;
 	padding: 0.2em 0.33em 0.13em;
-}
-.menu-toggle:hover {
-	background: #fff;
 }
 #menu-primary {
 	text-align: center;
