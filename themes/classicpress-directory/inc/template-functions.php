@@ -132,6 +132,10 @@ function kts_list_developers() {
 
 		if ( ! empty( $users ) ) {
 			foreach ( $users as $user ) {
+				if ( count_user_posts( $user->ID, [ 'plugin', 'theme', 'snippet' ], true ) === '0' ) {
+					continue;
+				}
+
 				$initial = $user->display_name[0]; // first letter
 				if ( $initial !== $previous_initial ) {
 					$developers .= '</ul><ul id="letter-' . strtolower( $initial ) . '-panel" class="developer-panel" role="tabpanel">';
@@ -161,6 +165,7 @@ function kts_purge_developers_cache( $user_id ) {
 }
 add_action( 'user_register', 'kts_purge_developers_cache' );
 add_action( 'delete_user', 'kts_purge_developers_cache' );
+add_action( 'profile_update', 'kts_purge_developers_cache' );
 
 function kts_purge_developers_cpt_cache( $post_id ) {
 
