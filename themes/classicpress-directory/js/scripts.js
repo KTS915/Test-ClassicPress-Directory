@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
 			if (e.key === 'Escape') {
 				let size = subMenus[i].getBoundingClientRect();
 				if (size.height !== 0) {
-					subMenus[i].parentElement.querySelector('a').focus();
+					subMenus[i].previousElementSibling.focus();
 					subMenus[i].style.display = 'none';
 				}
 			}
