@@ -583,8 +583,11 @@ object {
 	background: var(--classic-bg-color);
 }
 .logo:hover,
-.logo:focus {
+.logo:focus-within {
 	outline: 2px dotted #fff;
+}
+.logo a:focus {
+	outline: none;
 }
 /* Make sure logo link wraps around logo image. */
 .custom-logo-link {
