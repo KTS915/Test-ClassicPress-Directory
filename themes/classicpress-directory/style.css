@@ -960,6 +960,9 @@ nav ul li:focus-within ul {
 	float: left;
 	margin: 0 1em 0 0;
 }
+.registration {
+	margin: 0.5em 0 1em;
+}
 #colophon .nav a,
 #colophon .nav a:visited {
 	color: #eaec8e;
@@ -1079,6 +1082,26 @@ footer#legal {
 /*--------------------------------------------------------------
 ## CSS for larger tablets upwards
 --------------------------------------------------------------*/
+@media only screen and (max-width: 579px) {
+	.classic {
+		display: block;
+		justify-content: normal;
+	}
+	.footerleft,
+	.footerright,
+	.cpcopyright,
+	.cppolicy {
+		display: block;
+		width: 100%;
+		max-width: 100%;
+		text-align:center;
+	}
+	.footerleft img {
+		float: none;
+		margin: 0 0 0.3em 0;
+	}
+}
+
 @media only screen and (min-width: 580px) {
 	.software-grid {
 		margin: 0 0 2em;
