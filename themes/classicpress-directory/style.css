@@ -443,7 +443,14 @@ a {
 }
 a:hover {
 	text-decoration: none;
-}	
+}
+.top-menu:focus,
+nav a:focus {
+	outline: 0;
+}
+footer a:focus {
+	outline: 2px dotted #fff;
+}
 
 /*--------------------------------------------------------------
  * 
@@ -968,6 +975,8 @@ nav ul li:focus-within ul {
 	color: #eaec8e;
 	font-weight: 600;
 	border: none;
+}
+#colophon .nav a:hover {
 	text-decoration: none;
 }
 footer#legal {
