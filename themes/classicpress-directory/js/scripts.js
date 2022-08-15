@@ -32,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function() {
 					subMenus[i].style.display = 'none';
 				}
 			}
+			else if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				if (subMenus[i].style.display === 'none') {
+					subMenus[i].removeAttribute('style');
+				}
+			}
 			else if (e.key === 'Tab') {
 				if (subMenus[i].style.display === 'none') {
 					setTimeout(function() {
