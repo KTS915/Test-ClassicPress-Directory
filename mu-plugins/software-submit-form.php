@@ -229,7 +229,7 @@ function kts_render_software_submit_form() {
 				<legend><?php _e( 'Select Git Provider (currently only GitHub)', 'classicpress' ); ?></legend>
 				<div class="clear"></div>
 				<label for="github">
-					<input id="github" class="mgr-lg" name="git_provider" type="radio" value="github" required>
+					<input id="github" class="mgr-lg" name="git_provider" type="radio" value="github" checked required>
 					GitHub
 				</label>
 				<br>
@@ -279,7 +279,7 @@ function kts_software_submit_form_redirect() {
 
 	# Get correct type of software
 	$post_type = sanitize_text_field( wp_unslash( $_POST['software_type'] ) );
-/*
+
 	# Check that the type of software has been specified
 	if ( empty( $post_type ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-software-type' ) );
@@ -381,10 +381,10 @@ function kts_software_submit_form_redirect() {
 	if ( strtoupper( $title ) === $title ) { // all upper case
 		$title = ucwords( strtolower( $title ) ); // convert to title case
 	}
-*/
+
 	# Get download link
 	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
-/*
+
 	# Check that the download link points to GitHub URI associated with GitHub Username and name of software
 	$user_id = get_current_user_id();
 	$github_username = get_user_meta( $user_id, 'github_username', true );	
@@ -438,13 +438,13 @@ function kts_software_submit_form_redirect() {
 		$parsedown_md = new Parsedown();
 		$parsedown_md->setSafeMode(true);
 		$description = $parsedown_md->text( $readme['body'] );
-		$description = wp_kses_post( $description );
+		$description = wp_kses_post( str_replace( 'h1>', 'h2>', $description ) );
 	}
 
 	# Get current version of software
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
 	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
-*/
+
 	# Enable the download_url() and wp_handle_sideload() functions
 	require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
@@ -472,6 +472,7 @@ function kts_software_submit_form_redirect() {
 	# Check that slug is unique, holding errors until temporary file deleted
 	$slug_taxonomy = '';
 	$slug_problem = '';
+	$headers = '';
 
 	if ( $post_type === 'theme' ) { // Themes
 		$slugs = get_terms( array(
@@ -559,11 +560,11 @@ function kts_software_submit_form_redirect() {
 			'hide_empty' => false,
 			'fields' => 'names',
 		) );
-/*
+
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
 			$slug_problem = 'plugin';
 		}
-*/
+
 		$slug_taxonomy = 'plugin_slugs';
 
 		# Don't bother with further processing if there's a slug problem
@@ -692,7 +693,8 @@ function kts_software_submit_form_redirect() {
 		$post_info['post_category'] = $category_ids;
 	}
 	elseif ( $post_type === 'snippet' ) {
-		$post_info['tags_input'] = array_map( 'trim', $tags_array );
+		$tags_array = array_map( 'trim', $tags_array );
+		$post_info['tags_input'] = $tags_array;
 	}
 
 	# Save post
@@ -707,13 +709,41 @@ function kts_software_submit_form_redirect() {
 	# Add slug as both postmeta and custom taxonomy
 	add_post_meta( $post_id, 'slug', $slug );	
 	wp_set_object_terms( $post_id, [sanitize_title( $slug )], $slug_taxonomy );
+	
+	# Get name of developer for REST API
+	$user = get_user_by( 'id', $user_id );
+	add_post_meta( $post_id, 'developer_name', sanitize_text_field( $user->display_name ) );
 
+	# Add other meta fields for REST API
 	add_post_meta( $post_id, 'current_version', $current_version );
 	add_post_meta( $post_id, 'git_provider', $git_provider );
 	add_post_meta( $post_id, 'download_link', $download_link );
-	add_post_meta( $post_id, 'update_uri', $update_uri );
 	add_post_meta( $post_id, 'requires_php', $headers['RequiresPHP'] );
 	add_post_meta( $post_id, 'cp_version', $headers['RequiresCP'] );
+
+	# Add names of categories and tags to meta fields for REST API
+	if ( $post_type === 'plugin' ) {
+
+		# Add names and slugs of categories to meta for REST API
+		$cat_names = '';
+		$cat_slugs = '';
+		foreach( $category_ids as $key => $category_id ) {
+			$category = get_category( $category_id );
+			if ( $key === 0 ) {
+				$cat_names .= $category->name;
+				$cat_slugs .= $category->slug;
+			}
+			else {
+				$cat_names .= ',' . $category->name;
+				$cat_slugs .= ',' . $category->slug;
+			}
+		}
+		add_post_meta( $post_id, 'category_names', $cat_names );
+		add_post_meta( $post_id, 'category_slugs', $cat_slugs );
+	}
+	elseif ( $post_type === 'snippet' ) {
+		add_post_meta( $post_id, 'tags', implode( ',', $tags_array ) );
+	}
 
 	# Redirect to post where published
 	wp_safe_redirect( esc_url_raw( get_permalink( $post_id ) ) );
