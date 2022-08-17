@@ -54,12 +54,12 @@ Susty was itself based on Underscores https://underscores.me/, (C) 2012-2017 Aut
 	--font: "Source Sans Pro", "Helvetica Neue", Verdana, sans-serif;
 	--pre-font: "Courier 10 Pitch", Courier, monospace;
 	--code-font: Monaco, Consolas, "Andale Mono", "DejaVu Sans Mono", monospace;
-	--font-color: #444;
+	--font-color: #040402;
 	--font-alt-color: white;
 	--sidebar-bg-color: #d9f2ee;
 	--link-color: #034a59; /*#006b81;*/
 	--nav-link-color: #444;
-	--focus-outline: 2px dotted #555;
+	--focus-outline: 2px dotted #555	;
 }
 /* source-sans-pro-regular - latin */
 @font-face {
@@ -89,7 +89,7 @@ input,
 select,
 optgroup,
 textarea {
-	color: #040402;
+	color: var(--font-color);
 	font-family: var(--font);
 	font-size: calc( 15px + 2 * (100vw / 1500));
 	line-height: 1.5;
@@ -349,6 +349,7 @@ input[type="checkbox"] {
 	height: 1em;
 	vertical-align: baseline;
 }
+input[type="text"]:hover,
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="url"]:focus,
@@ -366,6 +367,7 @@ input[type="datetime-local"]:focus,
 input[type="color"]:focus,
 textarea:focus {
 	color: #111;
+	outline: var(--focus-outline);
 }
 select,
 #status-select {
@@ -380,6 +382,9 @@ select {
 	background-repeat: no-repeat;
 	background-position: 98.5% center;
 	margin-bottom: 1em;
+}
+select:hover {
+	outline: var(--focus-outline);
 }
 textarea {
 	width: 100%;
@@ -536,13 +541,13 @@ footer a:focus {
 /*--------------------------------------------------------------
 # Clearings
 --------------------------------------------------------------*/
-.clear:before,
-.clear:after {
+.clear::before,
+.clear::after {
 	content: "";
 	display: table;
 	table-layout: fixed;
 }
-.clear:after {
+.clear::after {
 	clear: both;
 }
 
@@ -1074,6 +1079,7 @@ footer#legal {
 .ui-button:hover,
 .ui-button:focus {
 	color: #0fd003;
+	outline: 2px dotted #444;
 }
 .ui-state-active {
 	color: #000 !important;
