@@ -48,30 +48,48 @@ function kts_register_meta_with_rest_api() {
 
 	$plugin_args5 = array(
 		'type'			=> 'string',
-		'description'	=> 'Update URI',
-		'single'		=> true,
-		'object_subtype'=> 'plugin',
-		'show_in_rest'	=> true,
-	);
-	register_meta( 'post', 'update_uri', $plugin_args5 );
-
-	$plugin_args6 = array(
-		'type'			=> 'string',
 		'description'	=> 'Minimum Required Version of PHP',
 		'single'		=> true,
 		'object_subtype'=> 'plugin',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'requires_php', $plugin_args6 );
+	register_meta( 'post', 'requires_php', $plugin_args5 );
 
-	$plugin_args7 = array(
+	$plugin_args6 = array(
 		'type'			=> 'string',
 		'description'	=> 'Plugin slug',
 		'single'		=> true,
 		'object_subtype'=> 'plugin',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'slug', $plugin_args7 );
+	register_meta( 'post', 'slug', $plugin_args6 );
+
+	$plugin_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Developer name',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'developer_name', $plugin_args7 );
+
+	$plugin_args8 = array(
+		'type'			=> 'string',
+		'description'	=> 'Category names',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'category_names', $plugin_args8 );
+
+	$plugin_args9 = array(
+		'type'			=> 'string',
+		'description'	=> 'Category slugs',
+		'single'		=> true,
+		'object_subtype'=> 'plugin',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'category_slugs', $plugin_args9 );
 
 	$theme_args1 = array(
 		'type'			=> 'string',
@@ -111,30 +129,30 @@ function kts_register_meta_with_rest_api() {
 
 	$theme_args5 = array(
 		'type'			=> 'string',
-		'description'	=> 'Update URI',
-		'single'		=> true,
-		'object_subtype'=> 'theme',
-		'show_in_rest'	=> true,
-	);
-	register_meta( 'post', 'update_uri', $theme_args5 );
-
-	$theme_args6 = array(
-		'type'			=> 'string',
 		'description'	=> 'Minimum Required Version of PHP',
 		'single'		=> true,
 		'object_subtype'=> 'theme',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'requires_php', $theme_args6 );
+	register_meta( 'post', 'requires_php', $theme_args5 );
 
-	$theme_args7 = array(
+	$theme_args6 = array(
 		'type'			=> 'string',
 		'description'	=> 'Theme slug',
 		'single'		=> true,
 		'object_subtype'=> 'theme',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'slug', $theme_args7 );
+	register_meta( 'post', 'slug', $theme_args6 );
+
+	$theme_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Developer name',
+		'single'		=> true,
+		'object_subtype'=> 'theme',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'developer_name', $theme_args7 );
 
 	$snippet_args1 = array(
 		'type'			=> 'string',
@@ -174,30 +192,39 @@ function kts_register_meta_with_rest_api() {
 
 	$snippet_args5 = array(
 		'type'			=> 'string',
-		'description'	=> 'Update URI',
-		'single'		=> true,
-		'object_subtype'=> 'snippet',
-		'show_in_rest'	=> true,
-	);
-	register_meta( 'post', 'update_uri', $snippet_args5 );
-
-	$snippet_args6 = array(
-		'type'			=> 'string',
 		'description'	=> 'Minimum Required Version of PHP',
 		'single'		=> true,
 		'object_subtype'=> 'snippet',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'requires_php', $snippet_args6 );
+	register_meta( 'post', 'requires_php', $snippet_args5 );
 
-	$snippet_args7 = array(
+	$snippet_args6 = array(
 		'type'			=> 'string',
 		'description'	=> 'Snippet slug',
 		'single'		=> true,
 		'object_subtype'=> 'snippet',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'slug', $snippet_args7 );
+	register_meta( 'post', 'slug', $snippet_args6 );
+
+	$snippet_args7 = array(
+		'type'			=> 'string',
+		'description'	=> 'Developer name',
+		'single'		=> true,
+		'object_subtype'=> 'snippet',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'developer_name', $snippet_args7 );
+
+	$snippet_args8 = array(
+		'type'			=> 'string',
+		'description'	=> 'Tags',
+		'single'		=> true,
+		'object_subtype'=> 'snippet',
+		'show_in_rest'	=> true,
+	);
+	register_meta( 'post', 'tags', $snippet_args8 );
 }
 add_action( 'init', 'kts_register_meta_with_rest_api' );
 
