@@ -472,7 +472,7 @@ function kts_software_submit_form_redirect() {
 	# Check that slug is unique, holding errors until temporary file deleted
 	$slug_taxonomy = '';
 	$slug_problem = '';
-	$headers = '';
+	$headers = [];
 
 	if ( $post_type === 'theme' ) { // Themes
 		$slugs = get_terms( array(
