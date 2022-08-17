@@ -421,7 +421,7 @@ function kts_software_submit_form_redirect() {
 	}
 	$data = json_decode( wp_remote_retrieve_body( $github_info ) );
 	if ( isset ( $data->message ) ) {
-		trigger_error( 'Something went wrong with GitHub API: ' . esc_html( $result->message ) );
+		trigger_error( 'Something went wrong with GitHub API: ' . esc_html( $data->message ) );
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
 		exit;
 	}
