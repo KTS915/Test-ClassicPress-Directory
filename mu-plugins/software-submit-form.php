@@ -497,12 +497,12 @@ function kts_software_submit_form_redirect() {
 			$headers = kts_get_plugin_data( $style_txt );
 		
 			# If still no headers or no description from style.css file above, try readme.txt file
-			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
 				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
 
-				if ( empty( $headers['RequiresPHP'] ) ) {
+				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
 				}
 
@@ -544,7 +544,7 @@ function kts_software_submit_form_redirect() {
 				}
 				$file_data = $zip->getFromIndex( $i, 8192 );
 				$headers = kts_get_plugin_data( $file_data );
-				if ( ! empty( $headers['RequiresPHP'] ) ) {
+				if ( ! empty( $headers['RequiresCP'] ) ) {
 
 					# We have the headers
 					$main_plugin_file = $zip->getNameIndex( $i );
@@ -575,7 +575,7 @@ function kts_software_submit_form_redirect() {
 			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
 			$headers = kts_get_plugin_data( $file_data );
 
-			if ( empty( $headers['RequiresPHP'] ) ) {
+			if ( empty( $headers['RequiresCP'] ) ) {
 
 				# Parse other files for headers
 				for ( $i = 0; $i < $zip->numFiles; $i++ ) {
@@ -586,7 +586,7 @@ function kts_software_submit_form_redirect() {
 					}
 					$file_data = $zip->getFromIndex( $i, 8192 );
 					$headers = kts_get_plugin_data( $file_data );
-					if ( ! empty( $headers['RequiresPHP'] ) ) {
+					if ( ! empty( $headers['RequiresCP'] ) ) {
 
 						# We have the headers
 						$main_plugin_file = $zip->getNameIndex( $i );
@@ -596,12 +596,12 @@ function kts_software_submit_form_redirect() {
 			}
 		
 			# If still no headers or no description from README.md file above, try readme.txt file
-			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
 				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
 
-				if ( empty( $headers['RequiresPHP'] ) ) {
+				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
 				}
 
