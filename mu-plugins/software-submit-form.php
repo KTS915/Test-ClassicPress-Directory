@@ -539,7 +539,7 @@ function kts_software_submit_form_redirect() {
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
 
-					# Only check PHP and don't recourse into subdirs
+					# Only check PHP files and don't recourse into subdirs
 					continue;
 				}
 				$file_data = $zip->getFromIndex( $i, 8192 );
@@ -581,7 +581,7 @@ function kts_software_submit_form_redirect() {
 				for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 					if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
 
-						# Only check PHP and don't recourse into subdirs
+						# Only check PHP files and don't recourse into subdirs
 						continue;
 					}
 					$file_data = $zip->getFromIndex( $i, 8192 );
