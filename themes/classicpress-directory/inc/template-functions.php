@@ -193,3 +193,36 @@ function kts_excerpt_fallback( $post ) {
 	}
 	return $excerpt;
 }
+
+/* SHOW CPTs ON CATEGORY AND TAGS ARCHIVES */
+function kts_query_post_type( $query ) {
+
+	# Don't run on admin pages
+	if ( is_admin() ) {
+		return;
+	}
+	
+    $post_types = get_post_types();
+
+    if ( is_category() ) {
+
+        $post_type = get_query_var( 'plugins' );
+
+        if ( $post_type ) {
+            $post_types = $post_type;
+        }
+
+        $query->set( 'post_type', $post_types );
+    }
+    elseif ( is_tag() ) {
+
+        $post_type = get_query_var( 'snippets' );
+
+        if ( $post_type ) {
+            $post_types = $post_type;
+        }
+
+        $query->set( 'post_type', $post_types );
+    }
+}
+add_action( 'pre_get_posts', 'kts_query_post_type' );
