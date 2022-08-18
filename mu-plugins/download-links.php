@@ -6,7 +6,7 @@
  * Description: Keeps download links up to date
  * Author: Tim Kaye
  * Author URI: https://timkaye.org/
- * Version: 0.1.0
+ * Version: 1.0.0
  **/
  
 /* RENDER MANUAL UPDATE DOWNLOAD LINK FORM */
@@ -26,13 +26,13 @@ function kts_render_software_update_link_form( $post ) {
 			
 	if ( isset( $_GET['notification'] ) ) {
 		if ( $_GET['notification'] === 'nonce-wrong-' . absint( $post->ID ) ) {
-			echo '<div class="error-message" role="alert"><p>' . __( 'You have already submitted this.', 'classicpress' ) . '</p></div>';
+			echo '<div class="error-message" role="alert"><p>' . __( 'You have already submitted this', 'classicpress' ) . '</p></div>';
 		}
 		elseif ( $_GET['notification'] === 'github-api-wrong-' . absint( $post->ID ) ) {
-			echo '<div class="error-message" role="alert"><p>' . __( 'Something went wrong with GitHub API.', 'classicpress' ) . '</p></div>';
+			echo '<div class="error-message" role="alert"><p>' . __( 'Something went wrong with the GitHub API', 'classicpress' ) . '</p></div>';
 		}
 		elseif ( $_GET['notification'] === 'success-' . absint( $post->ID ) ) {
-			echo '<div class="success-message" role="polite"><p>' . __( 'The link has been updated.', 'classicpress' ) . '</p></div>';
+			echo '<div class="success-message" role="polite"><p class="wp-caption-text">' . __( 'The link has been updated', 'classicpress' ) . '</p></div>';
 		}
 	}
 
@@ -71,8 +71,16 @@ function kts_software_update_link_redirect() {
 	}
 
 	if ( is_array( $update ) ) {
-		update_post_meta( $software_id, 'download_link', $update['download_link'] );
-		update_post_meta( $software_id, 'current_version', $update['current_version'] );
+		wp_update_post( array(
+			'ID'			=> $software_id,
+			'post_content'	=> $update['description'],
+			'meta_input'	=> array(
+				'download_link'		=> $update['download_link'],
+				'current_version'	=> $update['current_version'],
+				'requires_php'		=> $update['requires_php'],
+				'requires_cp'		=> $update['requires_cp'],
+			),
+		) );
 	}
 
 	# Generate success message
@@ -103,8 +111,16 @@ function kts_cron_update_download_links() {
 			continue;
 		}
 
-		update_post_meta( $post->ID, 'download_link', $update['download_link'] );
-		update_post_meta( $post->ID, 'current_version', $update['current_version'] );
+		wp_update_post( array(
+			'ID'			=> $post->ID,
+			'post_content'	=> $update['description'],
+			'meta_input'	=> array(
+				'download_link'		=> $update['download_link'],
+				'current_version'	=> $update['current_version'],
+				'requires_php'		=> $update['requires_php'],
+				'requires_cp'		=> $update['requires_cp'],
+			),
+		) );
 	}
 }
 add_action( 'update_cron_hook', 'kts_cron_update_download_links' );
@@ -112,11 +128,11 @@ add_action( 'update_cron_hook', 'kts_cron_update_download_links' );
 
 /* CRONJOB SCHEDULE */
 function kts_cron_add_ten_minutes( $schedules ) {
-   $schedules['ten_minutes'] = array(
-       'interval' => 10 * MINUTE_IN_SECONDS,
-       'display' => __( 'Every 10 minutes' )
-   );
-   return $schedules;
+	$schedules['ten_minutes'] = array(
+		'interval' => 10 * MINUTE_IN_SECONDS,
+		'display' => __( 'Every 10 minutes' )
+	);
+	return $schedules;
 }
 add_filter( 'cron_schedules', 'kts_cron_add_ten_minutes' );
 
@@ -162,7 +178,7 @@ function kts_maybe_update( $software_id ) {
 
 	$result = json_decode( wp_remote_retrieve_body( wp_safe_remote_get( esc_url_raw( $github_url ), $auth ) ) );
 	if ( isset ( $result->message ) ) {
-		trigger_error ( 'Something went wrong with GitHub API on item ' . $software_id . ': ' . esc_html( $result->message ) );
+		trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $result->message ) );
 		return false;
 	}
 
@@ -184,9 +200,200 @@ function kts_maybe_update( $software_id ) {
 
 	# Update download link and current version if newer
 	if ( version_compare( $new_version, $orig_version ) === 1 ) {
+
+		# Get software description
+		$headers = [];
+		$description = '';
+
+		$github_info = wp_remote_get( rtrim( $repo_url, '/' ), $auth );
+		if ( is_wp_error( $github_info ) ) {
+			trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $temp_file->get_error_message() ) );
+			return false;
+		}
+
+		$data = json_decode( wp_remote_retrieve_body( $github_info ) );
+		if ( isset ( $data->message ) ) {
+			trigger_error( 'Something went wrong with the GitHub API for item ' . $software_id . ': ' . esc_html( $data->message ) );
+			return false;
+		}
+		$default_branch = $data->default_branch;
+
+		$readme_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $repo_url );
+		$readme_url = $readme_url . $default_branch . '/README.md';
+		$readme = wp_remote_get( $readme_url );
+
+		if ( ! empty( $readme ) ) {
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme['body'] );
+			$description = wp_kses_post( str_replace( 'h1>', 'h2>', $description ) );
+		}
+		
+		# Enable the download_url() and wp_handle_sideload() functions
+		require_once( ABSPATH . 'wp-admin/includes/file.php' );
+
+		# Download (upload?) file to temp dir
+		$temp_file = download_url( $download_link, 5 ); // 5 secs before timeout
+		if ( is_wp_error( $temp_file ) ) {
+			trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $temp_file->get_error_message() ) );
+			return false;
+		}
+
+		# Array based on $_FILE as seen in PHP file uploads
+		$file = array(
+			'name'     => basename( $download_link ),
+			'type'     => 'application/zip',
+			'tmp_name' => $temp_file,
+			'error'    => 0,
+			'size'     => filesize( $temp_file ),
+		);
+
+		# Find slug from top level folder name
+		$zip = new ZipArchive();
+		$zip->open( $file['tmp_name'] );
+		$slug = strstr( $zip->getNameIndex(0), '/', true );
+
+		# Check that slug matches the current slug for the software
+		$current_slug = get_post_meta( $software_id, 'slug', true );
+		if ( $slug !== $current_slug ) {
+			trigger_error( 'The slug for the new version does not match the current version.' );
+			return false;
+		}
+
+		# Check themes
+		$post_type = get_post( $software_id )->post_type;
+		if ( $post_type === 'theme' ) {
+
+			# Get headers
+			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_NOCASE );
+
+			$headers = kts_get_plugin_data( $style_txt );
+		
+			# If still no headers or no description from style.css file above, try readme.txt file
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
+			
+				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+
+				if ( empty( $headers['RequiresCP'] ) ) {
+					$headers = kts_get_plugin_data( $readme_txt );
+				}
+
+				if ( empty( $description ) ) {
+					$parsedown_txt = new Parsedown();
+					$parsedown_txt->setSafeMode(true);
+
+					$readme_txt = str_replace( ['====', '===', '=='], ['####', '###', '##'], $readme_txt );
+
+					$description = $parsedown_txt->text( str_replace( '## Description ##', '', strstr( $readme_txt, '## Description ##' ) ) );
+					$description = wp_kses_post( $description );
+				}
+			}
+		}
+
+		# Snippets
+		elseif ( $post_type === 'snippet' ) {
+
+			# Get headers
+			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+
+					# Only check PHP files and don't recourse into subdirs
+					continue;
+				}
+				$file_data = $zip->getFromIndex( $i, 8192 );
+				$headers = kts_get_plugin_data( $file_data );
+				if ( ! empty( $headers['RequiresCP'] ) ) {
+
+					# We have the headers
+					$main_plugin_file = $zip->getNameIndex( $i );
+					break;
+				}
+			}
+		}
+
+		# Plugins
+		else {
+
+			# Check if most common location for main file contain headers
+			$guessed_main_file = $slug . '/' . $slug . '.php';
+			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
+			$headers = kts_get_plugin_data( $file_data );
+
+			if ( empty( $headers['RequiresCP'] ) ) {
+
+				# Parse other files for headers
+				for ( $i = 0; $i < $zip->numFiles; $i++ ) {
+					if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
+
+						# Only check PHP files and don't recourse into subdirs
+						continue;
+					}
+					$file_data = $zip->getFromIndex( $i, 8192 );
+					$headers = kts_get_plugin_data( $file_data );
+					if ( ! empty( $headers['RequiresCP'] ) ) {
+
+						# We have the headers
+						$main_plugin_file = $zip->getNameIndex( $i );
+						break;
+					}
+				}
+			}
+		
+			# If still no headers or no description from README.md file above, try readme.txt file
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
+			
+				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+
+				if ( empty( $headers['RequiresCP'] ) ) {
+					$headers = kts_get_plugin_data( $readme_txt );
+				}
+
+				if ( empty( $description ) ) {
+					$parsedown_txt = new Parsedown();
+					$parsedown_txt->setSafeMode(true);
+
+					$readme_txt = str_replace( ['====', '===', '=='], ['####', '###', '##'], $readme_txt );
+
+					$description = $parsedown_txt->text( str_replace( '## Description ##', '', strstr( $readme_txt, '## Description ##' ) ) );
+					$description = wp_kses_post( $description );
+				}
+			}
+		}
+
+		# Delete temporary file
+		wp_delete_file( $file['tmp_name'] );
+
+		# Check for the existence of the remaining items that we need
+		if ( empty( $description ) ) {
+			trigger_error( 'The new version has no description.' );
+			return false;
+		}
+
+		if ( empty( $headers ) ) {
+			trigger_error( 'The new version has no headers.' );
+			return false;
+		}
+
+		if ( empty( $headers['RequiresCP'] ) ) {
+			trigger_error( 'The new version is missing a Requires CP header.' );
+			return false;
+		}
+
+		if ( empty( $headers['RequiresPHP'] ) ) {
+			trigger_error( 'The new version is missing a Requires PHP header.' );
+			return false;
+		}
+
+		# Return data to update
 		return array(
-			'download_link'   => $new_link,
-			'current_version' => $new_version,
+			'download_link'		=> $new_link,
+			'current_version'	=> $new_version,
+			'description'		=> $description,
+			'requires_php'		=> $headers['RequiresPHP'],
+			'requires_cp'		=> $headers['RequiresCP'],
 		);
 	}
 
