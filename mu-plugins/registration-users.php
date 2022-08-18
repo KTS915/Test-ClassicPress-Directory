@@ -163,7 +163,7 @@ function kts_register_custom_fields( $user_id ) {
 	# Enable administrators to update GitHub Username
 	if ( is_admin() && current_user_can( 'manage_options' ) ) {
 		update_user_meta( $user_id, 'github_username', $github_username );
-		wp_remove_object_terms( $user_id, sanitize_title( $github_username ), 'github_usernames' );
+		wp_remove_object_terms( $user_id, sanitize_title( $current_gu ), 'github_usernames' );
 		wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
 	}
 			
