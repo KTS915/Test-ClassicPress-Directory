@@ -218,7 +218,7 @@ function kts_maybe_update( $software_id ) {
 		}
 		$default_branch = $data->default_branch;
 
-		$readme_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $repo_url );
+		$readme_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $tidy_url );
 		$readme_url = $readme_url . $default_branch . '/README.md';
 		$readme = wp_remote_get( $readme_url );
 
@@ -226,14 +226,14 @@ function kts_maybe_update( $software_id ) {
 			$parsedown_md = new Parsedown();
 			$parsedown_md->setSafeMode(true);
 			$description = $parsedown_md->text( $readme['body'] );
-			$description = wp_kses_post( str_replace( 'h1>', 'h2>', $description ) );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', ' ', $description ) );
 		}
 		
 		# Enable the download_url() and wp_handle_sideload() functions
 		require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
 		# Download (upload?) file to temp dir
-		$temp_file = download_url( $download_link, 5 ); // 5 secs before timeout
+		$temp_file = download_url( $new_link, 5 ); // 5 secs before timeout
 		if ( is_wp_error( $temp_file ) ) {
 			trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $temp_file->get_error_message() ) );
 			return false;
@@ -241,7 +241,7 @@ function kts_maybe_update( $software_id ) {
 
 		# Array based on $_FILE as seen in PHP file uploads
 		$file = array(
-			'name'     => basename( $download_link ),
+			'name'     => basename( $new_link ),
 			'type'     => 'application/zip',
 			'tmp_name' => $temp_file,
 			'error'    => 0,
