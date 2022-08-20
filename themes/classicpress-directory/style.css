@@ -1166,15 +1166,6 @@ footer#legal {
 		max-width: 900px;
 		margin: 0 auto 1.5em;
 	}
-}
-
-@media only screen and (min-width: 780px) {
-	.searchandfilter {
-		margin-top: -3.75em;
-	}
-}
-
-@media only screen and (min-width: 900px) {
 	.secondary-nav {
 		display: block;
 	}
@@ -1223,8 +1214,8 @@ footer#legal {
 		background: var(--classic-bg-color);
 	}
 	#masthead h1 a {
-		padding: 0.25em 0.5em;
-		margin-left: -0.25em;
+		padding: 0.25em 0.4em;
+		margin-left: -0.1em;
 	}
 	.menu-toggles {
 		display: none;
@@ -1261,7 +1252,7 @@ footer#legal {
 	nav ul li {
 		float: left;
 		border-bottom: none;
-		margin: 0 0.5em;
+		margin: 0 0.25em;
 		color: var(--font-alt-color);
 	}
 	nav ul li a {
@@ -1359,12 +1350,24 @@ footer#legal {
 	.single article {
 		font-size: 19px;
 	}
+}
+
+@media only screen and (min-width: 780px) {
+	.post-type-archive .searchandfilter {
+		margin-top: -3.75em;
+	}
+}
+
+@media only screen and (min-width: 900px) {
 	.software-grid {
 		grid-template-columns: repeat(3,minmax(0,1fr));
 	}
 }
 
 @media only screen and (min-width: 990px) {
+	.author .searchandfilter {
+		margin-top: -3.75em;
+	}
 	.searchandfilter li:first-child {
 		margin-right: 1.2em;
 	}
