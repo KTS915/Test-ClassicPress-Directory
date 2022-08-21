@@ -190,6 +190,9 @@ function kts_excerpt_fallback( $post ) {
 	$excerpt = $post->post_excerpt;
 	if ( empty( $excerpt ) ) {
 		$excerpt = substr( $post->post_content, 0, 150 );
+		if ( strlen( $post->post_content ) > 150 ) {
+			$excerpt = $excerpt . ' ...';
+		}
 	}
 	return $excerpt;
 }
