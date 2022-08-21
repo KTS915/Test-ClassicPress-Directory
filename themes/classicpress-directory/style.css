@@ -294,6 +294,7 @@ input[type="submit"] {
 }
 .developer-panel {
 	margin-bottom: 1em;
+	columns: 2 250px;
 }
 .dev-github {
 	font-size: 14px;
