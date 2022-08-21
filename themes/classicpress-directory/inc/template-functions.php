@@ -136,7 +136,7 @@ function kts_list_developers() {
 					continue;
 				}
 
-				$initial = $user->display_name[0]; // first letter
+				$initial = strtoupper( $user->display_name[0] ); // first letter
 				if ( $initial !== $previous_initial ) {
 					$developers .= '</ul><ul id="letter-' . strtolower( $initial ) . '-panel" class="developer-panel" role="tabpanel">';
 					$previous_initial = $initial;
