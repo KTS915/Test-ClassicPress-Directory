@@ -189,7 +189,7 @@ add_action( 'delete_post', 'kts_purge_developers_cpt_cache' );
 function kts_excerpt_fallback( $post ) {
 	$excerpt = $post->post_excerpt;
 	if ( empty( $excerpt ) ) {
-		$excerpt = wp_trim_words( $post->post_content, 15 );
+		$excerpt = wp_trim_words( $post->post_content, 150 );
 	}
 	return $excerpt;
 }
