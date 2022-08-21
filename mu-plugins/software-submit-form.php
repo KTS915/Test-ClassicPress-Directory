@@ -438,7 +438,7 @@ function kts_software_submit_form_redirect() {
 		$parsedown_md = new Parsedown();
 		$parsedown_md->setSafeMode(true);
 		$description = $parsedown_md->text( $readme['body'] );
-		$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', ' ', $description ) );
+		$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
 	}
 
 	# Get current version of software
