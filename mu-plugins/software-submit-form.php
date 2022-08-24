@@ -434,7 +434,7 @@ function kts_software_submit_form_redirect() {
 	$readme_url = $github_url . '/' . $default_branch . '/README.md';
 	$readme = wp_remote_get( $readme_url );
 
-	if ( ! empty( $readme ) ) {
+	if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
 		$parsedown_md = new Parsedown();
 		$parsedown_md->setSafeMode(true);
 		$description = $parsedown_md->text( $readme['body'] );
