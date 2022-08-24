@@ -752,7 +752,7 @@ function kts_software_submit_form_redirect() {
 add_action( 'template_redirect', 'kts_software_submit_form_redirect' );
 
 
-/* EMAIL ALL SITE ADMINISTRATORS WHEN SOFTWARE SUBMITTED */
+/* EMAIL ALL SITE ADMINISTRATORS AND EDITORS WHEN SOFTWARE SUBMITTED */
 function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 
 	# Bail if not relevant CPT
@@ -776,7 +776,7 @@ function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
 	# Get email addresses of administrators and send
-	$users = get_users( array( 'role' => 'administrator' ) );
+	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] );
 	foreach( $users as $user ) {
 		wp_mail( $user->user_email, $subject, $message, $headers );
 	}
