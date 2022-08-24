@@ -940,19 +940,23 @@ nav ul li:focus-within ul {
 	text-align: left;
 	background: var(--link-color);
 }
-#colophon p,
 #colophon li {
+	margin-bottom: 0.3em;
+}
+#colophon p,
+#colophon li a {
 	color: #fff;
 	margin-bottom: 0.6em;
 	font-size: .9em;
 	line-height: 1.3;
 }
-#colophon li {
-	margin-bottom: 0.2em;
+#colophon li a {
+	text-decoration: none;
+	border-bottom: 1px solid #fff;
 }
 #colophon li a:hover,
 #colophon li a:focus {
-	text-decoration: underline;
+	border-bottom: 1px solid transparent;
 }
 .classic {
 	color: #fff;
@@ -975,15 +979,6 @@ nav ul li:focus-within ul {
 }
 .registration {
 	margin: 0.5em 0 1em;
-}
-#colophon .nav a,
-#colophon .nav a:visited {
-	color: #eaec8e;
-	font-weight: 600;
-	border: none;
-}
-#colophon .nav a:hover {
-	text-decoration: none;
 }
 footer#legal {
 	max-width: unset;
