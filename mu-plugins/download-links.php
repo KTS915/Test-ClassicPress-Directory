@@ -222,7 +222,7 @@ function kts_maybe_update( $software_id ) {
 		$readme_url = $readme_url . $default_branch . '/README.md';
 		$readme = wp_remote_get( $readme_url );
 
-		if ( ! empty( $readme ) ) {
+		if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
 			$parsedown_md = new Parsedown();
 			$parsedown_md->setSafeMode(true);
 			$description = $parsedown_md->text( $readme['body'] );
