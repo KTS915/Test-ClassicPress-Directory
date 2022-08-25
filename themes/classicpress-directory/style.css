@@ -450,7 +450,6 @@ a {
 a:hover {
 	text-decoration: none;
 }
-.top-menu:focus,
 nav a:focus {
 	outline: 0;
 }
@@ -786,40 +785,6 @@ nav ul li:focus-within ul {
 	text-transform: none;
 	line-height: 1;
 }
-.secondary-nav {
-	margin: 0 auto;
-	background: var(--classic-bg-color);
-	display: none;
-}
-.top-menu {
-	max-width: 86rem;
-	margin: 0 auto;
-	display: flex;
-	justify-content: space-between;
-}
-.social-menu {
-	width: 100%;
-	padding: 0 0.7em 0 0.3em;
-}
-.social-menu ul {
-	display: block;
-}
-.social-menu a {
-	display: inline-block;
-	border: 0;
-	padding: .75em .75em;
-	text-decoration: none;
-	color: var(--font-alt-color);
-}
-.social-menu a:hover {
-	color: var(--font-alt-color);
-	background-color: var(--hover-bg-color);
-}
-.secondary-nav ul li {
-	border: none;
-	display: inline-block;
-	margin-left: 0.1em;
-}
 .buttons-menu {
 	text-align: right;
 	width: 60%;
@@ -915,12 +880,14 @@ nav ul li:focus-within ul {
 	padding: 0 0.83333333333em;
 	margin-left: 0.625rem;
 	margin-bottom: 0.625rem;
+	border: 2px solid transparent;
 }
-.pagination .page-numbers {
-	border: 1px solid transparent;
-}
-.pagination .page-numbers:hover {
+.pagination .page-numbers:hover {	
+	padding: 1px 0.86666666666em;
 	border: 1px solid var(--link-color);
+}
+.pagination .page-numbers:focus {
+	border: 2px dotted var(--link-color);
 }
 .pagination .page-numbers:first-child {
 	margin-left: 0;
@@ -958,10 +925,26 @@ nav ul li:focus-within ul {
 #colophon li a:focus {
 	border-bottom: 1px solid transparent;
 }
+.social-menu {
+	width: 100%;
+	display: flex;
+	justify-content: center;
+}
+#colophon .social-menu a {
+	display: inline-block;
+	border: 0;
+	padding: .75em .75em;
+	text-decoration: none;
+	color: var(--font-alt-color);
+}
+.social-menu a:hover {
+	color: var(--font-alt-color);
+	background-color: var(--hover-bg-color);
+}
 .classic {
 	color: #fff;
 	max-width: 86rem;
-	padding: 3em 0;
+	padding: 2em 0 1em;
 	margin: 0 auto;
 	display: flex;
 	justify-content: space-between;
@@ -969,13 +952,13 @@ nav ul li:focus-within ul {
 .footerleft {
 	min-height: 50px;
 	width: 100%;
-	max-width: 500px;
+	max-width: 550px;
 	padding: 0 1em;
 }
 .footerleft img {
 	width: 90px;
 	float: left;
-	margin: 0 1em 0 0;
+	margin: 0 1em 1em 0;
 }
 .registration {
 	margin: 0.5em 0 1em;
@@ -1093,7 +1076,7 @@ footer#legal {
 /*--------------------------------------------------------------
 ## CSS for larger tablets upwards
 --------------------------------------------------------------*/
-@media only screen and (max-width: 579px) {
+@media only screen and (max-width: 767px) {
 	.classic {
 		display: block;
 		justify-content: normal;
@@ -1161,13 +1144,6 @@ footer#legal {
 		padding-right: 2em;
 		max-width: 900px;
 		margin: 0 auto 1.5em;
-	}
-	.secondary-nav {
-		display: block;
-	}
-	.social-menu {
-		width: 30%;
-		min-width: 240px;
 	}
 	.buttons-menu {
 		text-align: right;
@@ -1264,24 +1240,16 @@ footer#legal {
 	.menu-item-has-children ul.sub-menu li a {
 		padding-left: .85em;
 	}
-	.switchbutton a {
-		color: var(--font-alt-color);
-		border: 1px solid rgba(255, 255, 255, 1.0);
-		border-radius: 5px;
-	}
-	#donate {
-		background: #057f99;
-	}
 	#get {
-		background: #89288f;
 		font-weight: 600;
+		background: var(--link-color);
 		margin-left: 6px;
+		border-radius: 5px;
+		border: 1px solid var(--font-color);
 	}
-	#donate:hover,
-	#donate:focus,
 	#get:hover,
 	#get:focus {
-		background: var(--hover-bg-color);
+		border: 1px solid var(--font-alt-color);
 	}
 	#site-navigation {
 		margin-right: -0.6em;
@@ -1338,6 +1306,19 @@ footer#legal {
 	}
 	#left-sidebar.widget-area {
 		order: -1;
+	}
+	.registration {
+		margin-top: 0;
+	}
+	.social-menu {
+		width: 30%;
+		min-width: 240px;
+	}
+	.social-menu li:first-child {
+		margin-left: -34%;
+	}
+	.footerright {
+		margin: -0.5em 1em 0 0;
 	}
 	#footer-links a {
 		padding: 1.2em 1.5em;
