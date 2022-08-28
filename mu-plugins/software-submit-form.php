@@ -427,20 +427,6 @@ function kts_software_submit_form_redirect() {
 	}
 	$default_branch = $data->default_branch;
 
-	# Get software description
-	$description = '';
-	$github_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $download_link );
-	$github_url = substr( $github_url, 0, strpos( $github_url, '/releases' ) );
-	$readme_url = $github_url . '/' . $default_branch . '/README.md';
-	$readme = wp_remote_get( $readme_url );
-
-	if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
-		$parsedown_md = new Parsedown();
-		$parsedown_md->setSafeMode(true);
-		$description = $parsedown_md->text( $readme['body'] );
-		$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
-	}
-
 	# Get current version of software
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
 	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
@@ -490,9 +476,17 @@ function kts_software_submit_form_redirect() {
 		# Don't bother with further processing if there's a slug problem
 		if ( empty( $slug_problem ) ) {
 
+			# Get description
+			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme_md );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 			# Get headers
 			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_NOCASE );
+			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_UNCHANGED );
 
 			$headers = kts_get_plugin_data( $style_txt );
 		
@@ -500,7 +494,7 @@ function kts_software_submit_form_redirect() {
 			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
 				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
@@ -570,6 +564,14 @@ function kts_software_submit_form_redirect() {
 		# Don't bother with further processing if there's a slug problem
 		if ( empty( $slug_problem ) ) {
 
+			# Get description
+			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme_md );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 			# Check if most common location for main file contain headers
 			$guessed_main_file = $slug . '/' . $slug . '.php';
 			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
@@ -599,7 +601,7 @@ function kts_software_submit_form_redirect() {
 			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
 				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
@@ -620,7 +622,6 @@ function kts_software_submit_form_redirect() {
 
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
-
 
 	# Bail and redirect if slug provided is already taken
 	if ( ! empty( $slug_problem ) ) {
@@ -666,9 +667,23 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
+	# Fallback for getting software description
 	if ( empty( $description ) && empty( $headers['Description'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
-		exit;
+		$github_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $download_link );
+		$github_url = substr( $github_url, 0, strpos( $github_url, '/releases' ) );
+		$readme_url = $github_url . '/' . $default_branch . '/README.md';
+		$readme = wp_remote_get( $readme_url );
+
+		if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme['body'] );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+		}
+		else {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
+			exit;
+		}
 	}
 	
 	# Get brief description of software
@@ -775,7 +790,7 @@ function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-	# Get email addresses of administrators and send
+	# Get email addresses of administrators and editors and send
 	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] );
 	foreach( $users as $user ) {
 		wp_mail( $user->user_email, $subject, $message, $headers );
