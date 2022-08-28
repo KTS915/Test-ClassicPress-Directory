@@ -35,7 +35,7 @@ function kts_register_meta_with_rest_api() {
 		'object_subtype'=> 'plugin',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'cp_version', $plugin_args3 );
+	register_meta( 'post', 'requires_cp', $plugin_args3 );
 
 	$plugin_args4 = array(
 		'type'			=> 'string',
@@ -116,7 +116,7 @@ function kts_register_meta_with_rest_api() {
 		'object_subtype'=> 'theme',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'cp_version', $theme_args3 );
+	register_meta( 'post', 'requires_cp', $theme_args3 );
 
 	$theme_args4 = array(
 		'type'			=> 'string',
@@ -179,7 +179,7 @@ function kts_register_meta_with_rest_api() {
 		'object_subtype'=> 'snippet',
 		'show_in_rest'	=> true,
 	);
-	register_meta( 'post', 'cp_version', $snippet_args3 );
+	register_meta( 'post', 'requires_cp', $snippet_args3 );
 
 	$snippet_args4 = array(
 		'type'			=> 'string',
@@ -227,6 +227,51 @@ function kts_register_meta_with_rest_api() {
 	register_meta( 'post', 'tags', $snippet_args8 );
 }
 add_action( 'init', 'kts_register_meta_with_rest_api' );
+
+
+/* REMOVE FIELDS FROM REST RESPONSE */
+function kts_prepare_rest( $response, $post, $request ) {
+
+	# Remove the troublesome '_links'
+	foreach( $response->get_links() as $key => $value ) {
+        $response->remove_link( $key );
+    }
+
+	# Retrieve the modified data
+	$data = $response->get_data();
+
+	# Unset the unwanted fields
+	unset( $data['id'] );
+	unset( $data['modified'] );
+	unset( $data['template'] );
+	unset( $data['date_gmt'] );
+	unset( $data['author'] );
+	unset( $data['link'] );
+	unset( $data['type'] );
+	unset( $data['date'] );
+	unset( $data['slug'] );
+	unset( $data['featured_media'] );	
+	unset( $data['guid'] );
+	unset( $data['modified_gmt'] );
+	unset( $data['status'] );
+
+	# Unset cats and tags because they return only IDs; names set as meta above
+	if ( $post->post_type === 'plugin' ) {
+		unset( $data['categories'] );
+	}
+	elseif ( $post->post_type === 'snippet' ) {
+		unset( $data['tags'] );
+	}
+
+	# Set the modified data as the response
+	$response->set_data( $data );
+
+	# Return the response
+	return $response;
+}
+add_filter( 'rest_prepare_plugin', 'kts_prepare_rest', 10, 3 );
+add_filter( 'rest_prepare_theme', 'kts_prepare_rest', 10, 3 );
+add_filter( 'rest_prepare_snippet', 'kts_prepare_rest', 10, 3 );
 
 
 /* REST API SECURITY */
