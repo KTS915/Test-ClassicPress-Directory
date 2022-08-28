@@ -955,6 +955,9 @@ nav ul li:focus-within ul {
 	max-width: 550px;
 	padding: 0 1em;
 }
+#footer-logo {
+	display: inline-block;
+}
 .footerleft img {
 	width: 90px;
 	float: left;
@@ -1306,6 +1309,11 @@ footer#legal {
 	}
 	#left-sidebar.widget-area {
 		order: -1;
+	}
+	#footer-logo {
+		float: left;
+		padding: 1em 0 0 1em;
+		margin: -1em 0 0 -1em;
 	}
 	.registration {
 		margin-top: 0;
