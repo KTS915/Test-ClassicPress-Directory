@@ -200,34 +200,6 @@ function kts_maybe_update( $software_id ) {
 
 	# Update download link and current version if newer
 	if ( version_compare( $new_version, $orig_version ) === 1 ) {
-
-		# Get software description
-		$headers = [];
-		$description = '';
-
-		$github_info = wp_remote_get( rtrim( $repo_url, '/' ), $auth );
-		if ( is_wp_error( $github_info ) ) {
-			trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $temp_file->get_error_message() ) );
-			return false;
-		}
-
-		$data = json_decode( wp_remote_retrieve_body( $github_info ) );
-		if ( isset ( $data->message ) ) {
-			trigger_error( 'Something went wrong with the GitHub API for item ' . $software_id . ': ' . esc_html( $data->message ) );
-			return false;
-		}
-		$default_branch = $data->default_branch;
-
-		$readme_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $tidy_url );
-		$readme_url = $readme_url . $default_branch . '/README.md';
-		$readme = wp_remote_get( $readme_url );
-
-		if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
-			$parsedown_md = new Parsedown();
-			$parsedown_md->setSafeMode(true);
-			$description = $parsedown_md->text( $readme['body'] );
-			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
-		}
 		
 		# Enable the download_url() and wp_handle_sideload() functions
 		require_once( ABSPATH . 'wp-admin/includes/file.php' );
@@ -264,9 +236,17 @@ function kts_maybe_update( $software_id ) {
 		$post_type = get_post( $software_id )->post_type;
 		if ( $post_type === 'theme' ) {
 
+			# Get description
+			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme_md );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 			# Get headers
 			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_NOCASE );
+			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_UNCHANGED );
 
 			$headers = kts_get_plugin_data( $style_txt );
 		
@@ -274,7 +254,7 @@ function kts_maybe_update( $software_id ) {
 			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
 				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
@@ -316,6 +296,14 @@ function kts_maybe_update( $software_id ) {
 		# Plugins
 		else {
 
+			# Get description
+			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme_md );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 			# Check if most common location for main file contain headers
 			$guessed_main_file = $slug . '/' . $slug . '.php';
 			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
@@ -345,7 +333,7 @@ function kts_maybe_update( $software_id ) {
 			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
 				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
@@ -366,12 +354,39 @@ function kts_maybe_update( $software_id ) {
 		# Delete temporary file
 		wp_delete_file( $file['tmp_name'] );
 
-		# Check for the existence of the remaining items that we need
+		# Fallback to get software description
 		if ( empty( $description ) ) {
-			trigger_error( 'The new version has no description.' );
-			return false;
+
+			$github_info = wp_remote_get( rtrim( $repo_url, '/' ), $auth );
+			if ( is_wp_error( $github_info ) ) {
+				trigger_error( 'Something went wrong with the GitHub API on item ' . $software_id . ': ' . esc_html( $temp_file->get_error_message() ) );
+				return false;
+			}
+
+			$data = json_decode( wp_remote_retrieve_body( $github_info ) );
+			if ( isset ( $data->message ) ) {
+				trigger_error( 'Something went wrong with the GitHub API for item ' . $software_id . ': ' . esc_html( $data->message ) );
+				return false;
+			}
+			$default_branch = $data->default_branch;
+
+			$readme_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $tidy_url );
+			$readme_url = $readme_url . $default_branch . '/README.md';
+			$readme = wp_remote_get( $readme_url );
+
+			if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
+				$parsedown_md = new Parsedown();
+				$parsedown_md->setSafeMode(true);
+				$description = $parsedown_md->text( $readme['body'] );
+				$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+			}
+			else {
+				trigger_error( 'The new version has no description.' );
+				return false;
+			}
 		}
 
+		# Check for the existence of the remaining items that we need
 		if ( empty( $headers ) ) {
 			trigger_error( 'The new version has no headers.' );
 			return false;
