@@ -232,17 +232,17 @@ function kts_maybe_update( $software_id ) {
 			return false;
 		}
 
+		# Get description
+		$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+		$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+		$parsedown_md = new Parsedown();
+		$parsedown_md->setSafeMode(true);
+		$description = $parsedown_md->text( $readme_md );
+		$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 		# Check themes
 		$post_type = get_post( $software_id )->post_type;
 		if ( $post_type === 'theme' ) {
-
-			# Get description
-			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
-			$parsedown_md = new Parsedown();
-			$parsedown_md->setSafeMode(true);
-			$description = $parsedown_md->text( $readme_md );
-			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
 
 			# Get headers
 			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
@@ -295,14 +295,6 @@ function kts_maybe_update( $software_id ) {
 
 		# Plugins
 		else {
-
-			# Get description
-			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
-			$parsedown_md = new Parsedown();
-			$parsedown_md->setSafeMode(true);
-			$description = $parsedown_md->text( $readme_md );
-			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
 
 			# Check if most common location for main file contain headers
 			$guessed_main_file = $slug . '/' . $slug . '.php';
