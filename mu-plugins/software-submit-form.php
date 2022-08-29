@@ -455,6 +455,14 @@ function kts_software_submit_form_redirect() {
 	$zip->open( $file['tmp_name'] );
 	$slug = strstr( $zip->getNameIndex(0), '/', true );
 
+	# Get description
+	$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+	$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+	$parsedown_md = new Parsedown();
+	$parsedown_md->setSafeMode(true);
+	$description = $parsedown_md->text( $readme_md );
+	$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 	# Check that slug is unique, holding errors until temporary file deleted
 	$slug_taxonomy = '';
 	$slug_problem = '';
@@ -475,14 +483,6 @@ function kts_software_submit_form_redirect() {
 
 		# Don't bother with further processing if there's a slug problem
 		if ( empty( $slug_problem ) ) {
-
-			# Get description
-			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
-			$parsedown_md = new Parsedown();
-			$parsedown_md->setSafeMode(true);
-			$description = $parsedown_md->text( $readme_md );
-			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
 
 			# Get headers
 			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
@@ -563,14 +563,6 @@ function kts_software_submit_form_redirect() {
 
 		# Don't bother with further processing if there's a slug problem
 		if ( empty( $slug_problem ) ) {
-
-			# Get description
-			$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
-			$parsedown_md = new Parsedown();
-			$parsedown_md->setSafeMode(true);
-			$description = $parsedown_md->text( $readme_md );
-			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
 
 			# Check if most common location for main file contain headers
 			$guessed_main_file = $slug . '/' . $slug . '.php';
