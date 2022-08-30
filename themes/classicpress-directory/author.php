@@ -5,6 +5,7 @@
  * @link https://developer.wordpress.org/themes/basics/template-hierarchy/
  */
 $author = get_queried_object();
+$big = 999999999; // need an unlikely integer
 
 get_header();
 ?>
@@ -39,10 +40,12 @@ get_header();
 					<ul class="software-grid">
 
 					<?php
+					$paged = ( get_query_var( 'paged' ) ) ? get_query_var( 'paged' ) : 1;
 					$plugin_args = array(
 						'post_type'		=> 'plugin',
 						'post_status'	=> 'publish',
 						'author'		=> $author->ID,
+						'paged'			=> $paged,
 					);
 					$plugin_post_loop = new WP_Query( $plugin_args );
 
@@ -51,7 +54,7 @@ get_header();
 						/* Start the Loop */
 						while ( $plugin_post_loop->have_posts() ) :
 						?>
-			
+
 							<li>
 
 								<?php
@@ -65,10 +68,31 @@ get_header();
 						endwhile;
 
 					endif;
-					wp_reset_postdata();
 					?>
 				
 					</ul>
+					
+					<nav class="navigation pagination">
+						<h2 class="screen-reader-text">Plugins navigation</h2>
+						<div class="nav-links">
+
+						<?php
+						echo paginate_links( array(
+							'before_page_number' => '<span class="meta-nav screen-reader-text">' . esc_html__( 'Page', 'classicpress' ) . ' </span>',
+							'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+							'format' => '?paged=%#%',
+							'current' => max(
+								1,
+								get_query_var( 'paged' ),
+							),
+							'total' => $plugin_post_loop->max_num_pages,
+						) );
+						?>
+
+						</div>
+					</nav>
+
+					<?php wp_reset_postdata(); ?>
 
 				</div><!-- #tabs-1 -->
 
@@ -80,6 +104,7 @@ get_header();
 						'post_type'		=> 'theme',
 						'post_status'	=> 'publish',
 						'author'		=> $author->ID,
+						'numberposts'	=> -1,
 					);
 					$theme_post_loop = new WP_Query( $theme_args );
 
@@ -88,7 +113,7 @@ get_header();
 						/* Start the Loop */
 						while ( $theme_post_loop->have_posts() ) :
 						?>
-			
+
 							<li>
 								<?php
 								$theme_post_loop->the_post();
@@ -101,10 +126,31 @@ get_header();
 						endwhile;
 
 					endif;
-					wp_reset_postdata();
 					?>
 				
 					</ul>
+					
+					<nav class="navigation pagination">
+						<h2 class="screen-reader-text">Themes navigation</h2>
+						<div class="nav-links">
+
+						<?php
+						echo paginate_links( array(
+							'before_page_number' => '<span class="meta-nav screen-reader-text">' . esc_html__( 'Page', 'classicpress' ) . ' </span>',
+							'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+							'format' => '?paged=%#%',
+							'current' => max(
+								1,
+								get_query_var( 'paged' ),
+							),
+							'total' => $theme_post_loop->max_num_pages,
+						) );
+						?>
+
+						</div>
+					</nav>
+
+					<?php wp_reset_postdata(); ?>
 
 				</div><!-- #tabs-2 -->
 
@@ -116,6 +162,7 @@ get_header();
 						'post_type'		=> 'snippet',
 						'post_status'	=> 'publish',
 						'author'		=> $author->ID,
+						'numberposts'	=> -1,
 					);
 					$snippet_post_loop = new WP_Query( $snippet_args );
 
@@ -124,7 +171,7 @@ get_header();
 						/* Start the Loop */
 						while ( $snippet_post_loop->have_posts() ) :
 						?>
-			
+
 							<li>
 								<?php
 								$snippet_post_loop->the_post();
@@ -137,10 +184,31 @@ get_header();
 						endwhile;
 
 					endif;
-					wp_reset_postdata();
 					?>
 				
 					</ul>
+					
+					<nav class="navigation pagination">
+						<h2 class="screen-reader-text">Snippets navigation</h2>
+						<div class="nav-links">
+
+						<?php
+						echo paginate_links( array(
+							'before_page_number' => '<span class="meta-nav screen-reader-text">' . esc_html__( 'Page', 'classicpress' ) . ' </span>',
+							'base' => str_replace( $big, '%#%', esc_url( get_pagenum_link( $big ) ) ),
+							'format' => '?paged=%#%',
+							'current' => max(
+								1,
+								get_query_var( 'paged' ),
+							),
+							'total' => $snippet_post_loop->max_num_pages,
+						) );
+						?>
+
+						</div>
+					</nav>
+
+					<?php wp_reset_postdata(); ?>
 
 				</div><!-- #tabs-3 -->
 
@@ -157,10 +225,6 @@ get_header();
 					<button id="bottom-close" data-a11y-dialog-hide aria-label="Close this dialog window">Close</button>
 				</div>
 			</div>
-
-			<?php
-			the_posts_navigation();
-			?>
 
 		</main><!-- #main -->
 	</div><!-- #primary -->
