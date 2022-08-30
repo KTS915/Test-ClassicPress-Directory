@@ -1337,13 +1337,6 @@ footer#legal {
 	}
 }
 
-@media only screen and (min-width: 780px) {
-	.search .searchandfilter,
-	.post-type-archive .searchandfilter {
-		margin-top: -3.75em;
-	}
-}
-
 @media only screen and (min-width: 900px) {
 	.software-grid {
 		grid-template-columns: repeat(3,minmax(0,1fr));
@@ -1351,7 +1344,7 @@ footer#legal {
 }
 
 @media only screen and (min-width: 990px) {
-	.author .searchandfilter {
+	.searchandfilter {
 		margin-top: -3.75em;
 	}
 	.searchandfilter li:first-child {
