@@ -197,35 +197,28 @@ function kts_excerpt_fallback( $post ) {
 	return $excerpt;
 }
 
-/* SHOW CPTs ON CATEGORY AND TAGS ARCHIVES */
+
+/* SHOW CPTs ON CATEGORY, TAGS, AND AUTHOR ARCHIVE PAGES */
 function kts_query_post_type( $query ) {
 
 	# Don't run on admin pages
 	if ( is_admin() ) {
 		return;
 	}
-	
-    $post_types = get_post_types();
+
+	# Don't run if not the main query
+	if ( ! $query->is_main_query() ) {
+		return;
+	}
 
     if ( is_category() ) {
-
-        $post_type = get_query_var( 'plugins' );
-
-        if ( $post_type ) {
-            $post_types = $post_type;
-        }
-
-        $query->set( 'post_type', $post_types );
+        $query->set( 'post_type', 'plugin' );
     }
     elseif ( is_tag() ) {
-
-        $post_type = get_query_var( 'snippets' );
-
-        if ( $post_type ) {
-            $post_types = $post_type;
-        }
-
-        $query->set( 'post_type', $post_types );
+        $query->set( 'post_type', 'snippet' );
     }
+    elseif ( is_author() ) {
+		$query->set( 'post_type', ['plugin', 'theme', 'snippet'] );
+	}
 }
 add_action( 'pre_get_posts', 'kts_query_post_type' );
