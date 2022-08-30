@@ -23,20 +23,38 @@ get_header();
 			</header><!-- .page-header -->
 
 			<?php
+			if ( class_exists( 'SearchAndFilter' ) ) {
+				echo do_shortcode( '[searchandfilter fields="search,post_types,category,post_tag" post_types="plugin,theme,snippet"]' );
+			}
+			?>
+
+			<div class="clear"></div>
+
+			<ul class="software-grid">
+
+			<?php
 			/* Start the Loop */
 			while ( have_posts() ) :
-				the_post();
+			?>
 
-				/**
-				 * Run the loop for the search to output the results.
-				 * If you want to overload this in a child theme then include a file
-				 * called content-search.php and that will be used instead.
-				 */
-				get_template_part( 'template-parts/content', 'search' );
+				<li>
+					<?php
+					the_post();
 
+					get_template_part( 'template-parts/content', 'search' );
+					?>
+				</li>
+
+			<?php
 			endwhile;
+			?>
+				
+			</ul>
 
-			the_posts_navigation();
+			<?php
+			the_posts_pagination( array(
+				'before_page_number' => '<span class="meta-nav screen-reader-text">' . esc_html__( 'Page', 'classicpress' ) . ' </span>',
+			) );
 
 		else :
 
@@ -44,6 +62,18 @@ get_header();
 
 		endif;
 		?>
+		
+			<div class="dialog-container" id="my-dialog" aria-labelledby="my-dialog-title" aria-describedby="my-dialog-description" aria-hidden="true">
+				<div class="dialog-overlay" data-a11y-dialog-hide></div>
+				<div class="dialog-content" role="document">
+					<button id="top-close" data-a11y-dialog-hide class="dialog-close" aria-label="Close this dialog window">&times;</button>
+
+					<h2 id="my-dialog-title"></h2>
+
+					<div id="my-dialog-description"></div>
+					<button id="bottom-close" data-a11y-dialog-hide aria-label="Close this dialog window">Close</button>
+				</div>
+			</div>
 
 		</main><!-- #main -->
 	</section><!-- #primary -->
