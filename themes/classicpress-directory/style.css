@@ -1338,6 +1338,7 @@ footer#legal {
 }
 
 @media only screen and (min-width: 780px) {
+	.search .searchandfilter,
 	.post-type-archive .searchandfilter {
 		margin-top: -3.75em;
 	}
