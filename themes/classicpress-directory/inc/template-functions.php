@@ -194,7 +194,7 @@ function kts_excerpt_fallback( $post ) {
 			$excerpt = $excerpt . ' ...';
 		}
 	}
-	return $excerpt;
+	echo $excerpt;
 }
 
 
