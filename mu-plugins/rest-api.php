@@ -298,3 +298,28 @@ function kts_modify_rest_software_routes( $response, $handler, $request ) {
 	}
 }
 add_filter( 'rest_request_before_callbacks', 'kts_modify_rest_software_routes', 10, 3 );
+
+function kts_filter_posts_by_slug_field( $args, $request ) {
+	if ( ! isset( $request['byslug'] )  ) {
+		return $args;
+	}
+	
+	$slug_value = sanitize_text_field( $request['byslug'] );
+	$slug_meta_query = array(
+		'key' => 'slug',
+		'value' => $slug_value
+	);
+	
+	if ( isset( $args['meta_query'] ) ) {
+		$args['meta_query']['relation'] = 'AND';
+		$args['meta_query'][] = $slug_meta_query;
+	} else {
+		$args['meta_query'] = array();
+		$args['meta_query'][] = $slug_meta_query;
+	}
+	
+	return $args;
+}
+add_filter( 'rest_plugin_query', 'kts_filter_posts_by_slug_field', 999, 2 );
+add_filter( 'rest_theme_query', 'kts_filter_posts_by_slug_field', 999, 2 );
+add_filter( 'rest_snippet_query', 'kts_filter_posts_by_slug_field', 999, 2 );
