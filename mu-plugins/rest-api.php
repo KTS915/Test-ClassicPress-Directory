@@ -299,8 +299,10 @@ function kts_modify_rest_software_routes( $response, $handler, $request ) {
 }
 add_filter( 'rest_request_before_callbacks', 'kts_modify_rest_software_routes', 10, 3 );
 
+
+/* ENABLE SEARCHING REST API BY SLUG META */
 function kts_filter_posts_by_slug_field( $args, $request ) {
-	if ( ! isset( $request['byslug'] )  ) {
+	if ( empty( $request['byslug'] )  ) {
 		return $args;
 	}
 	
