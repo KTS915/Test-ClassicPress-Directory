@@ -75,7 +75,7 @@
 			<?php the_title( '<h2  class="h3"><a href="' . esc_url( get_permalink() ) . '" rel="bookmark">', '</a></h2>' );	?>
 		</header>
 
-		<p><?php echo esc_html( kts_excerpt_fallback( $post ) ); ?></p>
+		<p><?php kts_excerpt_fallback( $post ); ?></p>
 		
 		<div class="software-item-meta">
 			<div class="meta-item left">
