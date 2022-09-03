@@ -839,7 +839,7 @@ nav ul li:focus-within ul {
 	gap: 1.5rem;
 	margin: 0 0 2em;
 }
-.content .software-grid li {
+.content .software-grid > li {
 	list-style: none;
 	padding: 0 1em;
 	border-radius: .5rem;
