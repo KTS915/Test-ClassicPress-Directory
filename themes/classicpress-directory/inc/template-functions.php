@@ -132,13 +132,17 @@ function kts_list_developers() {
 
 		if ( ! empty( $users ) ) {
 			foreach ( $users as $user ) {
-				$initial = $user->display_name[0]; // first letter
+				if ( count_user_posts( $user->ID, [ 'plugin', 'theme', 'snippet' ], true ) === '0' ) {
+					continue;
+				}
+
+				$initial = strtoupper( remove_accents( $user->display_name[0] ) ); // first letter
 				if ( $initial !== $previous_initial ) {
 					$developers .= '</ul><ul id="letter-' . strtolower( $initial ) . '-panel" class="developer-panel" role="tabpanel">';
 					$previous_initial = $initial;
 				}
 
-				$developers .= '<li><span>' . get_avatar( $user->ID, 24 ) . '</span> <a href="' . esc_url( get_author_posts_url( $user->ID ) ) . '" class="developer">' . esc_html( $user->display_name ) . '</a>&emsp;<a href="' . esc_url( get_user_meta( $user->ID, 'repo_url', true ) ) . '" title="' . __( 'GitHub Repository for ', 'classicpress' ) . esc_attr( $user->display_name ) . '"><i class="cpicon-github dev-github"></i></a></li>';
+				$developers .= '<li><span>' . get_avatar( $user->ID, 24 ) . '</span> <a href="' . esc_url( get_author_posts_url( $user->ID ) ) . '" class="developer">' . esc_html( $user->display_name ) . '</a>&emsp;<a href="' . esc_url( 'https://github.com/' . get_user_meta( $user->ID, 'github_username', true ) . '/' ) . '" title="' . __( 'GitHub Repository for ', 'classicpress' ) . esc_attr( $user->display_name ) . '"><i class="cpicon-github dev-github"></i></a></li>';
 
 				if ( $user === end( $users ) ) { // last name in list
 					$developers .= '</ul>';
@@ -161,6 +165,7 @@ function kts_purge_developers_cache( $user_id ) {
 }
 add_action( 'user_register', 'kts_purge_developers_cache' );
 add_action( 'delete_user', 'kts_purge_developers_cache' );
+add_action( 'profile_update', 'kts_purge_developers_cache' );
 
 function kts_purge_developers_cpt_cache( $post_id ) {
 
@@ -184,7 +189,36 @@ add_action( 'delete_post', 'kts_purge_developers_cpt_cache' );
 function kts_excerpt_fallback( $post ) {
 	$excerpt = $post->post_excerpt;
 	if ( empty( $excerpt ) ) {
-		$excerpt = wp_trim_words( $post->post_content, 15 );
+		$excerpt = substr( strip_tags( $post->post_content ), 0, 150 );
+		if ( strlen( $post->post_content ) > 150 ) {
+			$excerpt = $excerpt . ' ...';
+		}
 	}
-	return $excerpt;
+	echo $excerpt;
 }
+
+
+/* SHOW CPTs ON CATEGORY, TAGS, AND AUTHOR ARCHIVE PAGES */
+function kts_query_post_type( $query ) {
+
+	# Don't run on admin pages
+	if ( is_admin() ) {
+		return;
+	}
+
+	# Don't run if not the main query
+	if ( ! $query->is_main_query() ) {
+		return;
+	}
+
+    if ( is_category() ) {
+        $query->set( 'post_type', 'plugin' );
+    }
+    elseif ( is_tag() ) {
+        $query->set( 'post_type', 'snippet' );
+    }
+    elseif ( is_author() ) {
+		$query->set( 'post_type', ['plugin', 'theme', 'snippet'] );
+	}
+}
+add_action( 'pre_get_posts', 'kts_query_post_type' );

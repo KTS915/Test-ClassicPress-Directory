@@ -19,31 +19,6 @@
 
 <div id="page">
 	<a class="skip-link screen-reader-text" href="#content"><?php esc_html_e( 'Skip to content', 'bedrock' ); ?></a>
-
-	<nav id="secondary-nav" class="secondary-nav">
-		<div id="top-menu" class="top-menu">
-
-			<div class="social-menu">
-				<ul>
-					<li><a href="https://forums.classicpress.net/" target="_blank" title="Forums" rel="noreferrer noopener"><i class="cpicon-discourse"></i></a></li>
-					<li><a href="https://www.classicpress.net/join-slack/" target="_blank" title="Slack" rel="noreferrer noopener"><i class="cpicon-slack"></i></a></li>
-					<li><a href="https://github.com/ClassicPress" target="_blank" title="GitHub" rel="noreferrer noopener"><i class="cpicon-github"></i></a></li>
-					<li><a href="https://twitter.com/GetClassicPress" target="_blank" title="Twitter" rel="noreferrer noopener"><i class="cpicon-twitter"></i></a></li>
-					<li><a href="https://www.facebook.com/GetClassicPress" target="_blank" title="Facebook" rel="noreferrer noopener"><i class="cpicon-facebook-f"></i></a></li>
-				</ul>
-			</div>
-
-			<div class="buttons-menu">
-				<small>
-					<ul class="switches">
-						<li class="switchbutton donate"><a id="donate" href="https://www.classicpress.net/donate/">Donate</a></li>
-						<li class="switchbutton download"><a id="get" href="https://www.classicpress.net/get-classicpress/">Get ClassicPress</a></li>
-					</ul>
-				</small>
-			</div>
-
-		</div><!-- #top-menu -->
-	</nav><!-- #secondary-nav -->
 	
 	<section class="home-hero-container">
 		<div id="inner-header" class="outer-width">
@@ -54,33 +29,27 @@
 			<nav id="site-navigation" class="main-navigation nav--toggle-sub nav--toggle-small" aria-label="Main menu">
 				<div class="menu-mainmenu-container">
 					<ul id="general-menu" class="primary-menu menu">
-						<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children"><a href="https://www.classicpress.net/get-classicpress/">Resources</a>
-							<ul class="sub-menu">
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/get-classicpress/">Get ClassicPress</a></li>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/roadmap/">Roadmap</a></li>
-								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a target="_blank" rel="noreferrer noopener" href="https://docs.classicpress.net/">Documentation</a></li>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/brand-guidelines/">Brand Guidelines</a></li>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/for-plugin-developers/">For Plugin Developers</a></li>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/for-plugin-developers/submit-your-plugin/">How to Submit Your Plugin</a></li>
-								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/reasons-to-switch-to-classicpress-from-wordpress-4-9/">For WordPress Users</a></li>
-							</ul>
-						</li>
 						<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children"><a href="https://www.classicpress.net/community/">Community</a>
 							<ul class="sub-menu">
+								<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-605"><a href="https://www.classicpress.net/blog/">Blog</a></li>
 								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/community/">Get Involved</a></li>
 								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a target="_blank" rel="noreferrer noopener" href="https://forums.classicpress.net">Forums</a></li>
 								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a target="_blank" rel="noreferrer noopener" href="https://forums.classicpress.net/c/governance/petitions/77">Petitions</a></li>
 							</ul>
 						</li>
-						<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-605"><a href="https://www.classicpress.net/blog/">Blog</a></li>
 						<li class="menu-item menu-item-type-post_type menu-item-object-page menu-item-has-children"><a href="https://www.classicpress.net/about/">About</a>
 							<ul class="sub-menu">
 								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/about/">About ClassicPress</a></li>
+								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/roadmap/">Roadmap</a></li>
+								<li class="menu-item menu-item-type-custom menu-item-object-custom"><a target="_blank" rel="noreferrer noopener" href="https://docs.classicpress.net/">Documentation</a></li>
+								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/brand-guidelines/">Brand Guidelines</a></li>
+								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/reasons-to-switch-to-classicpress-from-wordpress-4-9/">For WordPress Users</a></li>
 								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/governance/">Our Governance</a></li>
 								<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/faq/">FAQs</a></li>
 							</ul>
 						</li>
-						<li class="menu-item menu-item-type-post_type menu-item-object-page"><a href="https://www.classicpress.net/contact/">Contact</a></li>
+						<li class="switchbutton donate"><a id="donate" href="https://www.classicpress.net/donate/">Donate</a></li>
+						<li class="menu-item menu-item-type-post_type menu-item-object-page"><a id="get" href="https://www.classicpress.net/get-classicpress/">Get ClassicPress</a></li>
 					</ul>
 				</div>
 			</nav><!-- #site-navigation -->

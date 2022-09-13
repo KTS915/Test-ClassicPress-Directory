@@ -118,7 +118,7 @@ function bedrock_scripts() {
 		wp_enqueue_script( 'archive-js', get_template_directory_uri() . '/js/archive.js', null, null, true );
 	}
 
-	elseif ( is_archive() ) {
+	elseif ( is_archive() || is_search() ) {
 		wp_enqueue_style( 'modal-css', get_template_directory_uri() . '/css/modal.css' );
 		wp_enqueue_script( 'archive-js', get_template_directory_uri() . '/js/archive.js', null, null, true );
 	}

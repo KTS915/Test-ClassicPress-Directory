@@ -229,7 +229,7 @@ function kts_render_software_submit_form() {
 				<legend><?php _e( 'Select Git Provider (currently only GitHub)', 'classicpress' ); ?></legend>
 				<div class="clear"></div>
 				<label for="github">
-					<input id="github" class="mgr-lg" name="git_provider" type="radio" value="github" required>
+					<input id="github" class="mgr-lg" name="git_provider" type="radio" value="github" checked required>
 					GitHub
 				</label>
 				<br>
@@ -279,7 +279,7 @@ function kts_software_submit_form_redirect() {
 
 	# Get correct type of software
 	$post_type = sanitize_text_field( wp_unslash( $_POST['software_type'] ) );
-/*
+
 	# Check that the type of software has been specified
 	if ( empty( $post_type ) ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-software-type' ) );
@@ -381,14 +381,14 @@ function kts_software_submit_form_redirect() {
 	if ( strtoupper( $title ) === $title ) { // all upper case
 		$title = ucwords( strtolower( $title ) ); // convert to title case
 	}
-*/
+
 	# Get download link
 	$download_link = esc_url_raw( wp_unslash( $_POST['download_link'] ) );
-/*
+
 	# Check that the download link points to GitHub URI associated with GitHub Username and name of software
 	$user_id = get_current_user_id();
 	$github_username = get_user_meta( $user_id, 'github_username', true );	
-	$update_uri = esc_url_raw( 'https://github.com/' . $github_username . '/' . str_replace( ' ', '-', $title ) . '/releases/download/' );
+	$update_uri = esc_url_raw( 'https://github.com/' . $github_username . '/' );
 	
 	if ( stripos( $download_link, $update_uri ) !== 0 ) {
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=invalid-github' ) );
@@ -421,30 +421,16 @@ function kts_software_submit_form_redirect() {
 	}
 	$data = json_decode( wp_remote_retrieve_body( $github_info ) );
 	if ( isset ( $data->message ) ) {
-		trigger_error( 'Something went wrong with GitHub API: ' . esc_html( $result->message ) );
+		trigger_error( 'Something went wrong with GitHub API: ' . esc_html( $data->message ) );
 		wp_safe_redirect( esc_url_raw( $referer . '?notification=github-repo-error' ) );
 		exit;
 	}
 	$default_branch = $data->default_branch;
 
-	# Get software description
-	$description = '';
-	$github_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $download_link );
-	$github_url = substr( $github_url, 0, strpos( $github_url, '/releases' ) );
-	$readme_url = $github_url . '/' . $default_branch . '/README.md';
-	$readme = wp_remote_get( $readme_url );
-
-	if ( ! empty( $readme ) ) {
-		$parsedown_md = new Parsedown();
-		$parsedown_md->setSafeMode(true);
-		$description = $parsedown_md->text( $readme['body'] );
-		$description = wp_kses_post( $description );
-	}
-
 	# Get current version of software
 	preg_match( '~releases\/download\/v?[\s\S]+?\/~', $download_link, $matches );
 	$current_version = str_replace( ['releases/download/v', 'releases/download/', '/'], '', $matches[0] );
-*/
+
 	# Enable the download_url() and wp_handle_sideload() functions
 	require_once( ABSPATH . 'wp-admin/includes/file.php' );
 
@@ -469,9 +455,18 @@ function kts_software_submit_form_redirect() {
 	$zip->open( $file['tmp_name'] );
 	$slug = strstr( $zip->getNameIndex(0), '/', true );
 
+	# Get description
+	$readme_index = $zip->locateName( 'README.md', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
+	$readme_md = $zip->getFromIndex( $readme_index, 0, ZipArchive::FL_UNCHANGED );
+	$parsedown_md = new Parsedown();
+	$parsedown_md->setSafeMode(true);
+	$description = $parsedown_md->text( $readme_md );
+	$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+
 	# Check that slug is unique, holding errors until temporary file deleted
 	$slug_taxonomy = '';
 	$slug_problem = '';
+	$headers = [];
 
 	if ( $post_type === 'theme' ) { // Themes
 		$slugs = get_terms( array(
@@ -491,17 +486,17 @@ function kts_software_submit_form_redirect() {
 
 			# Get headers
 			$style_index = $zip->locateName( 'style.css', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_NOCASE );
+			$style_txt = $zip->getFromIndex( $style_index, 8192, ZipArchive::FL_UNCHANGED );
 
 			$headers = kts_get_plugin_data( $style_txt );
 		
 			# If still no headers or no description from style.css file above, try readme.txt file
-			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
-				if ( empty( $headers['RequiresPHP'] ) ) {
+				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
 				}
 
@@ -538,12 +533,12 @@ function kts_software_submit_form_redirect() {
 			for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 				if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
 
-					# Only check PHP and don't recourse into subdirs
+					# Only check PHP files and don't recourse into subdirs
 					continue;
 				}
 				$file_data = $zip->getFromIndex( $i, 8192 );
 				$headers = kts_get_plugin_data( $file_data );
-				if ( ! empty( $headers['RequiresPHP'] ) ) {
+				if ( ! empty( $headers['RequiresCP'] ) ) {
 
 					# We have the headers
 					$main_plugin_file = $zip->getNameIndex( $i );
@@ -559,11 +554,11 @@ function kts_software_submit_form_redirect() {
 			'hide_empty' => false,
 			'fields' => 'names',
 		) );
-/*
+
 		if ( in_array( sanitize_title( $slug ), $slugs ) ) {
 			$slug_problem = 'plugin';
 		}
-*/
+
 		$slug_taxonomy = 'plugin_slugs';
 
 		# Don't bother with further processing if there's a slug problem
@@ -574,18 +569,18 @@ function kts_software_submit_form_redirect() {
 			$file_data = $zip->getFromName( $guessed_main_file, 8192 );
 			$headers = kts_get_plugin_data( $file_data );
 
-			if ( empty( $headers['RequiresPHP'] ) ) {
+			if ( empty( $headers['RequiresCP'] ) ) {
 
 				# Parse other files for headers
 				for ( $i = 0; $i < $zip->numFiles; $i++ ) {
 					if ( ! preg_match( '~\.php$~', $zip->getNameIndex( $i ) ) || substr_count( $zip->getNameIndex( $i ), '/' ) !== 1 ) {
 
-						# Only check PHP and don't recourse into subdirs
+						# Only check PHP files and don't recourse into subdirs
 						continue;
 					}
 					$file_data = $zip->getFromIndex( $i, 8192 );
 					$headers = kts_get_plugin_data( $file_data );
-					if ( ! empty( $headers['RequiresPHP'] ) ) {
+					if ( ! empty( $headers['RequiresCP'] ) ) {
 
 						# We have the headers
 						$main_plugin_file = $zip->getNameIndex( $i );
@@ -595,12 +590,12 @@ function kts_software_submit_form_redirect() {
 			}
 		
 			# If still no headers or no description from README.md file above, try readme.txt file
-			if ( empty( $headers['RequiresPHP'] ) || empty( $description ) ) {
+			if ( empty( $headers['RequiresCP'] ) || empty( $description ) ) {
 			
 				$readme_txt_index = $zip->locateName( 'readme.txt', ZipArchive::FL_NOCASE|ZipArchive::FL_NODIR );
-				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_NOCASE );
+				$readme_txt = $zip->getFromIndex( $readme_txt_index, 8192, ZipArchive::FL_UNCHANGED );
 
-				if ( empty( $headers['RequiresPHP'] ) ) {
+				if ( empty( $headers['RequiresCP'] ) ) {
 					$headers = kts_get_plugin_data( $readme_txt );
 				}
 
@@ -619,7 +614,6 @@ function kts_software_submit_form_redirect() {
 
 	# Delete temporary file
 	wp_delete_file( $file['tmp_name'] );
-
 
 	# Bail and redirect if slug provided is already taken
 	if ( ! empty( $slug_problem ) ) {
@@ -665,9 +659,23 @@ function kts_software_submit_form_redirect() {
 		exit;
 	}
 
+	# Fallback for getting software description
 	if ( empty( $description ) && empty( $headers['Description'] ) ) {
-		wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
-		exit;
+		$github_url = str_replace( 'https://github.com', 'https://raw.githubusercontent.com', $download_link );
+		$github_url = substr( $github_url, 0, strpos( $github_url, '/releases' ) );
+		$readme_url = $github_url . '/' . $default_branch . '/README.md';
+		$readme = wp_remote_get( $readme_url );
+
+		if ( wp_remote_retrieve_response_code( $readme ) === 200 ) {
+			$parsedown_md = new Parsedown();
+			$parsedown_md->setSafeMode(true);
+			$description = $parsedown_md->text( $readme['body'] );
+			$description = wp_kses_post( preg_replace('~<h1>.*<\/h1>~', '', $description ) );
+		}
+		else {
+			wp_safe_redirect( esc_url_raw( $referer . '?notification=no-description' ) );
+			exit;
+		}
 	}
 	
 	# Get brief description of software
@@ -692,7 +700,8 @@ function kts_software_submit_form_redirect() {
 		$post_info['post_category'] = $category_ids;
 	}
 	elseif ( $post_type === 'snippet' ) {
-		$post_info['tags_input'] = array_map( 'trim', $tags_array );
+		$tags_array = array_map( 'trim', $tags_array );
+		$post_info['tags_input'] = $tags_array;
 	}
 
 	# Save post
@@ -707,13 +716,41 @@ function kts_software_submit_form_redirect() {
 	# Add slug as both postmeta and custom taxonomy
 	add_post_meta( $post_id, 'slug', $slug );	
 	wp_set_object_terms( $post_id, [sanitize_title( $slug )], $slug_taxonomy );
+	
+	# Get name of developer for REST API
+	$user = get_user_by( 'id', $user_id );
+	add_post_meta( $post_id, 'developer_name', sanitize_text_field( $user->display_name ) );
 
+	# Add other meta fields for REST API
 	add_post_meta( $post_id, 'current_version', $current_version );
 	add_post_meta( $post_id, 'git_provider', $git_provider );
 	add_post_meta( $post_id, 'download_link', $download_link );
-	add_post_meta( $post_id, 'update_uri', $update_uri );
 	add_post_meta( $post_id, 'requires_php', $headers['RequiresPHP'] );
-	add_post_meta( $post_id, 'cp_version', $headers['RequiresCP'] );
+	add_post_meta( $post_id, 'requires_cp', $headers['RequiresCP'] );
+
+	# Add names of categories and tags to meta fields for REST API
+	if ( $post_type === 'plugin' ) {
+
+		# Add names and slugs of categories to meta for REST API
+		$cat_names = '';
+		$cat_slugs = '';
+		foreach( $category_ids as $key => $category_id ) {
+			$category = get_category( $category_id );
+			if ( $key === 0 ) {
+				$cat_names .= $category->name;
+				$cat_slugs .= $category->slug;
+			}
+			else {
+				$cat_names .= ',' . $category->name;
+				$cat_slugs .= ',' . $category->slug;
+			}
+		}
+		add_post_meta( $post_id, 'category_names', $cat_names );
+		add_post_meta( $post_id, 'category_slugs', $cat_slugs );
+	}
+	elseif ( $post_type === 'snippet' ) {
+		add_post_meta( $post_id, 'tags', implode( ',', $tags_array ) );
+	}
 
 	# Redirect to post where published
 	wp_safe_redirect( esc_url_raw( get_permalink( $post_id ) ) );
@@ -722,7 +759,7 @@ function kts_software_submit_form_redirect() {
 add_action( 'template_redirect', 'kts_software_submit_form_redirect' );
 
 
-/* EMAIL ALL SITE ADMINISTRATORS WHEN SOFTWARE SUBMITTED */
+/* EMAIL ALL SITE ADMINISTRATORS AND EDITORS WHEN SOFTWARE SUBMITTED */
 function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 
 	# Bail if not relevant CPT
@@ -745,8 +782,8 @@ function kts_email_on_software_submitted( $post_id, $meta_key, $_meta_value ) {
 
 	$headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-	# Get email addresses of administrators and send
-	$users = get_users( array( 'role' => 'administrator' ) );
+	# Get email addresses of administrators and editors and send
+	$users = get_users( [ 'role__in' => [ 'administrator', 'editor' ] ] );
 	foreach( $users as $user ) {
 		wp_mail( $user->user_email, $subject, $message, $headers );
 	}

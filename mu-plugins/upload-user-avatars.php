@@ -441,7 +441,7 @@ function kts_svg_initial_avatar_generator( $display_name ) {
 
 	$random_color_key = array_rand( $colors, 1 );
 	$background = $colors[$random_color_key];
-	$letter = strtoupper( $display_name[0] );
+	$letter = strtoupper( remove_accents( $display_name[0] ) );
 	
 	$svg = '<?xml version="1.0" encoding="UTF-8"?><svg style="font-weight:bold;" width="96px" height="96px" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><style type="text/css">@font-face {font-family: "Source Sans Pro";src: url("' . get_template_directory_uri() . '/fonts/source-sans-pro-latin-bold.woff2") format("woff2");font-weight: normal;font-style: normal;}</style></defs><rect x="0" y="0" width="500" height="500" style="fill:' . $background . '"/><text x="50%" y="50%" dy=".1em" fill="#eee" text-anchor="middle" dominant-baseline="middle" style="font-family: &quot;Source Sans Pro&quot;, sans-serif; font-size:72px; line-height: 1">' . $letter . '</text></svg>';
 

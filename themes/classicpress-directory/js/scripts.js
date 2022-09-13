@@ -21,16 +21,32 @@ document.addEventListener('DOMContentLoaded', function() {
 		}, false);
 	}
 
-	/* SHOW AND HIDE SUB-MENUS ON GENERAL CLASSICPRESS MENU */
-	const parents = document.getElementsByClassName('menu-item-has-children');
-	for (let i = 0, n = parents.length; i < n; i++) {
-		parents[i].addEventListener('mouseover', function() {
-			parents[i].querySelector('.sub-menu').style.display = 'flex';
-		}, false);
-		parents[i].addEventListener('mouseout', function() {
-			parents[i].querySelector('.sub-menu').style.display = 'none';
-		}, false);
-	}
+	/* HIDE SUB-MENUS AND RE-FOCUS WHEN PRESSING ESCAPE KEY */
+	const subMenus = document.getElementsByClassName('sub-menu');
+	document.addEventListener('keydown', function(e) {
+		for (let i = 0, n = subMenus.length; i < n; i++) {
+			if (e.key === 'Escape') {
+				let size = subMenus[i].getBoundingClientRect();
+				if (size.height !== 0) {
+					subMenus[i].previousElementSibling.focus();
+					subMenus[i].style.display = 'none';
+				}
+			}
+			else if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				if (subMenus[i].style.display === 'none') {
+					subMenus[i].removeAttribute('style');
+				}
+			}
+			else if (e.key === 'Tab') {
+				if (subMenus[i].style.display === 'none') {
+					setTimeout(function() {
+						subMenus[i].removeAttribute('style');
+					}, 100);
+				}
+			}
+		}
+	}, false);
 
 	/* RELOAD ON RESIZE BEYOND MEDIA QUERY BREAKPOINT */
 	var windoe = window;

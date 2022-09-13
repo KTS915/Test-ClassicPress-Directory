@@ -60,7 +60,7 @@
 			<?php echo esc_html( get_post_meta( $post->ID, 'current_version', true ) ); ?>
 
 			<h2 class="h5"><?php _e( 'Minimum ClassicPress Version', 'classicpress' ); ?></h2>
-			<?php echo esc_html( get_post_meta( $post->ID, 'cp_version', true ) ) . '.0'; ?>
+			<?php echo esc_html( get_post_meta( $post->ID, 'requires_cp', true ) ) . '.0'; ?>
 
 			<h2 class="h5"><?php _e( 'Download Link', 'classicpress' ); ?></h2>
 			<?php echo make_clickable( esc_url( get_post_meta( $post->ID, 'download_link', true ) ) ); ?>
@@ -75,7 +75,7 @@
 			<?php the_title( '<h2  class="h3"><a href="' . esc_url( get_permalink() ) . '" rel="bookmark">', '</a></h2>' );	?>
 		</header>
 
-		<p><?php echo esc_html( kts_excerpt_fallback( $post ) ); ?></p>
+		<p><?php kts_excerpt_fallback( $post ); ?></p>
 		
 		<div class="software-item-meta">
 			<div class="meta-item left">

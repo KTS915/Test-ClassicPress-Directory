@@ -159,6 +159,14 @@ function kts_register_custom_fields( $user_id ) {
 		add_user_meta( $user_id, 'github_username', $github_username );
 		wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
 	}
+
+	# Enable administrators to update GitHub Username
+	if ( is_admin() && current_user_can( 'manage_options' ) ) {
+		update_user_meta( $user_id, 'github_username', $github_username );
+		wp_remove_object_terms( $user_id, sanitize_title( $current_gu ), 'github_usernames' );
+		wp_set_object_terms( $user_id, [sanitize_title( $github_username )], 'github_usernames' );
+	}
+			
 }
 add_action( 'user_register', 'kts_register_custom_fields' );
 add_action( 'edit_user_created_user', 'kts_register_custom_fields' ); // backend
@@ -168,7 +176,11 @@ add_action( 'edit_user_profile_update', 'kts_register_custom_fields' );
 
 /* BACK-END USER REGISTRATION CUSTOM FIELDS */
 # Do not provide users with a means for changing their GitHub Username
-function kts_user_admin_register_custom_fields( $user ) { ?>
+function kts_user_admin_register_custom_fields( $user ) {
+	$editable = 'readonly';
+	if ( current_user_can( 'manage_options' ) ) {
+		$editable = '';
+	} ?>
 	
 	<table class="form-table">
 		<tr>
@@ -177,7 +189,7 @@ function kts_user_admin_register_custom_fields( $user ) { ?>
 			</th>
 
 			<td>
-				<input id="github_username" name="github_username" type="text" class="regular-text" value="<?php echo esc_attr( get_user_meta( $user->ID, 'github_username', true ) ); ?>" readonly>
+				<input id="github_username" name="github_username" type="text" class="regular-text" value="<?php echo esc_attr( get_user_meta( $user->ID, 'github_username', true ) ); ?>" <?php echo $editable; ?>>
 				<br>
 			</td>
 		</tr>
@@ -261,13 +273,7 @@ add_action( 'init', 'kts_change_author_base' );
 
 /* REMOVE TITLE PREFIX ON ARCHIVE PAGES */
 function kts_change_author_archive_base( $title ) {
-    if ( is_category() ) {
-        $title = single_cat_title( '', false );
-    }
-    elseif ( is_tag() ) {
-        $title = single_tag_title( '', false );
-    }
-    elseif ( is_author() ) {
+    if ( is_author() ) {
         $title = '<span class="vcard">' . get_the_author() . '</span>';
     }
     elseif ( is_tax() ) {
