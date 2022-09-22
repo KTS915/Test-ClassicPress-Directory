@@ -227,6 +227,8 @@ dd {
 }
 img {
 	height: auto;
+}
+.software > img {
 	margin-top: 1em;
 }
 video {
