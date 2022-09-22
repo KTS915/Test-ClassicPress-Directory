@@ -227,6 +227,7 @@ dd {
 }
 img {
 	height: auto;
+	margin-top: 1em;
 }
 video {
 	height: 100%;
